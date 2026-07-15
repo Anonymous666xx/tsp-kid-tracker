@@ -19,15 +19,16 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Setup Gradle
+      - name: Setup Gradle 8.4
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.4'
 
       - name: Build Release APK
         working-directory: kid-app
         run: |
           echo "sdk.dir=$ANDROID_HOME" > local.properties
-          gradle wrapper --gradle-version 8.4
-          ./gradlew assembleRelease --no-daemon
+          gradle assembleRelease --no-daemon
 
       - name: Upload APK to Releases
         uses: softprops/action-gh-release@v2
@@ -36,9 +37,9 @@ jobs:
           name: TSP Tracker v1.0
           body: |
             ## TSP Tracker APK
-            
+
             Download the APK below and install it on the kid's phone.
-            
+
             **Setup:**
             1. Install the APK
             2. Enter the API URL: `https://tsp.omaromartest12.workers.dev`
