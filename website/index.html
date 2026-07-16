@@ -13,6 +13,7 @@
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+@keyframes disconnectPulse { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html { height: 100%; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #060612; color: #e0e0e0; height: 100%; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; -webkit-font-smoothing: antialiased; }
@@ -21,6 +22,7 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 .header h1 { font-size: 17px; color: #00e5ff; font-weight: 800; letter-spacing: 2px; animation: neonPulse 3s ease-in-out infinite; }
 .header .status { font-size: 11px; color: #556; margin-left: auto; transition: color 0.3s; white-space: nowrap; }
 .header .status.online { color: #00ff88; text-shadow: 0 0 6px rgba(0,255,136,0.4); }
+.header .status.disconnected { color: #ff1744; text-shadow: 0 0 6px rgba(255,23,68,0.4); }
 .login-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; position: relative; z-index: 1; }
 .login-box { background: linear-gradient(145deg, #0d1117, #0a0e1a); padding: 28px 20px; border-radius: 18px; text-align: center; box-shadow: 0 0 40px rgba(0,229,255,0.05), 0 8px 32px rgba(0,0,0,0.6); border: 1px solid rgba(0,229,255,0.15); width: 100%; max-width: 380px; animation: neonBorder 4s ease-in-out infinite; }
 .login-box .brand { margin-bottom: 16px; }
@@ -47,6 +49,13 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 .top-bar .refresh-btn:active { background: rgba(0,229,255,0.15); }
 .top-bar .disconnect-btn { position: absolute; right: 8px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); border: 1px solid rgba(255,23,68,0.3); color: #ff5252; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
 .top-bar .disconnect-btn:active { background: rgba(255,23,68,0.15); }
+.disconnected-overlay { display: none; position: absolute; inset: 0; z-index: 20000; background: rgba(6,6,18,0.85); backdrop-filter: blur(6px); flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+.disconnected-overlay.visible { display: flex; }
+.disconnected-overlay .icon { width: 64px; height: 64px; border-radius: 50%; background: rgba(255,23,68,0.15); border: 2px solid rgba(255,23,68,0.4); display: flex; align-items: center; justify-content: center; animation: disconnectPulse 2s ease-in-out infinite; }
+.disconnected-overlay .icon svg { width: 32px; height: 32px; }
+.disconnected-overlay .title { color: #ff1744; font-size: 20px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+.disconnected-overlay .sub { color: #667; font-size: 13px; }
+.disconnected-overlay .retry-text { color: #556; font-size: 11px; animation: pulse 2s ease-in-out infinite; }
 .info-panel { position: absolute; bottom: 16px; left: 16px; right: 16px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(0,229,255,0.15); z-index: 10000; display: none; max-height: 40vh; overflow-y: auto; }
 .info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; gap: 6px; }
 .info-row .label { color: #556; flex-shrink: 0; }
@@ -113,9 +122,17 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 <div class="map-container" id="mapContainer">
   <div class="top-bar" id="topBar">
     <button class="refresh-btn" id="refreshBtn">Refresh</button>
-    <button class="disconnect-btn" id="disconnectBtn">Disconnect</button>
+    <button class="disconnect-btn" id="disconnectBtn">Logout</button>
   </div>
   <div id="map"></div>
+  <div class="disconnected-overlay" id="disconnectedOverlay">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ff1744" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+    </div>
+    <div class="title">DISCONNECTED</div>
+    <div class="sub">Device went offline</div>
+    <div class="retry-text">Waiting for reconnection...</div>
+  </div>
   <div class="info-panel" id="infoPanel">
     <div class="info-row"><span class="label">Last update:</span><span class="value" id="lastUpdate">-</span></div>
     <div class="info-row"><span class="label">Accuracy:</span><span class="value" id="accuracy">-</span></div>
@@ -130,7 +147,7 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 <script>
 let deviceId = localStorage.getItem('tsp-device-id');
 if (!deviceId) { deviceId = crypto.randomUUID(); localStorage.setItem('tsp-device-id', deviceId); }
-let map, marker, trail, currentCode, refreshInterval, pairPollInterval;
+let map, marker, trail, currentCode, refreshInterval, pairPollInterval, lastDataTime = 0, isDisconnected = false;
 const inputs = document.querySelectorAll('.code-input input');
 const connectBtn = document.getElementById('connectBtn');
 const loginScreen = document.getElementById('loginScreen');
@@ -138,6 +155,7 @@ const mapContainer = document.getElementById('mapContainer');
 const topBar = document.getElementById('topBar');
 const infoPanel = document.getElementById('infoPanel');
 const pairingWait = document.getElementById('pairingWait');
+const disconnectedOverlay = document.getElementById('disconnectedOverlay');
 const API_BASE = "https://tsp.omaromartest12.workers.dev";
 
 inputs.forEach((input, i) => {
@@ -165,6 +183,7 @@ connectBtn.addEventListener('click', async () => {
   if (currentCode.length !== 6) return;
   const pairKey = 'tsp-paired-' + currentCode;
   if (localStorage.getItem(pairKey) === deviceId) {
+    localStorage.setItem('tsp-current-code', currentCode);
     startTracking();
     return;
   }
@@ -181,6 +200,7 @@ connectBtn.addEventListener('click', async () => {
     const data = await res.json();
     if (data.status === 'accepted') {
       localStorage.setItem(pairKey, deviceId);
+      localStorage.setItem('tsp-current-code', currentCode);
       startTracking();
       return;
     }
@@ -198,6 +218,7 @@ function pollPairStatus(requestId) {
       if (data.status === 'accepted') {
         clearInterval(pairPollInterval);
         localStorage.setItem('tsp-paired-' + currentCode, deviceId);
+        localStorage.setItem('tsp-current-code', currentCode);
         startTracking();
       } else if (data.status === 'declined') {
         clearInterval(pairPollInterval);
@@ -224,17 +245,36 @@ function startTracking() {
   mapContainer.style.display = 'flex';
   topBar.style.display = 'block';
   initMap();
+  lastDataTime = Date.now();
+  isDisconnected = false;
+  disconnectedOverlay.classList.remove('visible');
   fetchLocation();
   refreshInterval = setInterval(fetchLocation, 1000);
+  setInterval(checkDisconnected, 2000);
   document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live';
   document.getElementById('status').className = 'status online';
+}
+
+function checkDisconnected() {
+  if (!currentCode || !lastDataTime) return;
+  const elapsed = (Date.now() - lastDataTime) / 1000;
+  if (elapsed > 15 && !isDisconnected) {
+    isDisconnected = true;
+    disconnectedOverlay.classList.add('visible');
+    document.getElementById('status').textContent = 'Disconnected';
+    document.getElementById('status').className = 'status disconnected';
+  }
 }
 
 document.getElementById('disconnectBtn').addEventListener('click', () => {
   clearInterval(refreshInterval);
   clearInterval(pairPollInterval);
   localStorage.removeItem('tsp-paired-' + currentCode);
+  localStorage.removeItem('tsp-current-code');
   currentCode = null;
+  lastDataTime = 0;
+  isDisconnected = false;
+  disconnectedOverlay.classList.remove('visible');
   loginScreen.style.display = 'flex';
   mapContainer.style.display = 'none';
   topBar.style.display = 'none';
@@ -268,12 +308,18 @@ async function fetchLocation() {
     const res = await fetch(API_BASE + '/api/get-location?code=' + currentCode);
     if (!res.ok) return;
     const data = await res.json();
+    if (!data.latitude) return;
+    lastDataTime = Date.now();
+    if (isDisconnected) {
+      isDisconnected = false;
+      disconnectedOverlay.classList.remove('visible');
+      document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live';
+      document.getElementById('status').className = 'status online';
+    }
     updateMap(data);
     updateCalls(data.calls || []);
     document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live';
-  } catch (e) {
-    document.getElementById('status').textContent = 'Error';
-  }
+  } catch (e) {}
 }
 
 function updateMap(data) {
@@ -314,6 +360,17 @@ function updateCalls(calls) {
     list.appendChild(item);
   });
 }
+
+(function autoReconnect() {
+  const savedCode = localStorage.getItem('tsp-current-code');
+  const pairKey = 'tsp-paired-' + savedCode;
+  if (savedCode && savedCode.length === 6 && localStorage.getItem(pairKey) === deviceId) {
+    currentCode = savedCode;
+    inputs.forEach((inp, i) => { inp.value = savedCode[i] || ''; });
+    updateConnectBtn();
+    startTracking();
+  }
+})();
 </script>
 </body>
 </html>
