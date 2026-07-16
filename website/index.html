@@ -56,27 +56,49 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 .disconnected-overlay .title { color: #ff1744; font-size: 20px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
 .disconnected-overlay .sub { color: #667; font-size: 13px; }
 .disconnected-overlay .retry-text { color: #556; font-size: 11px; animation: pulse 2s ease-in-out infinite; }
-.info-panel { position: absolute; bottom: 16px; left: 16px; right: 16px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(0,229,255,0.15); z-index: 10000; display: none; max-height: 45vh; overflow-y: auto; }
+.info-panel { position: absolute; bottom: 56px; left: 16px; right: 16px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(0,229,255,0.15); z-index: 10000; display: none; max-height: 35vh; overflow-y: auto; }
 .info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; gap: 6px; }
 .info-row .label { color: #556; flex-shrink: 0; }
 .info-row .value { font-weight: 600; text-align: right; word-break: break-all; color: #c0c0c0; }
 .info-row .value.stale { color: #ff9100; }
 .info-row .value.old { color: #ff1744; }
-.calls-section { margin-top: 10px; border-top: 1px solid rgba(0,229,255,0.1); padding-top: 10px; }
-.calls-title { font-size: 10px; color: #7c4dff; letter-spacing: 2px; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
-.call-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; margin-bottom: 4px; animation: slideUp 0.3s ease-out; background: rgba(255,255,255,0.02); }
-.call-item:active { background: rgba(255,255,255,0.05); }
-.call-type-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px; }
-.call-type-icon.incoming { background: rgba(0,255,136,0.1); color: #00ff88; }
-.call-type-icon.outgoing { background: rgba(0,229,255,0.1); color: #00e5ff; }
-.call-type-icon.missed { background: rgba(255,23,68,0.1); color: #ff1744; }
-.call-type-icon.other { background: rgba(100,100,100,0.1); color: #666; }
-.call-info { flex: 1; min-width: 0; }
-.call-name { font-size: 13px; color: #e0e0e0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.call-number { font-size: 11px; color: #556; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
-.call-meta { text-align: right; flex-shrink: 0; }
-.call-time { font-size: 10px; color: #556; }
-.call-duration { font-size: 11px; color: #00e5ff; font-weight: 600; margin-top: 1px; }
+.call-bar { display: none; position: absolute; bottom: 0; left: 0; right: 0; z-index: 15000; background: linear-gradient(180deg, rgba(6,6,18,0.95), rgba(10,14,26,0.98)); backdrop-filter: blur(16px); border-top: 1px solid rgba(0,229,255,0.15); padding: 0; }
+.call-bar.visible { display: block; }
+.call-bar-handle { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; -webkit-user-select: none; user-select: none; }
+.call-bar-handle:active { background: rgba(255,255,255,0.03); }
+.call-bar-icon { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #1a2744, #0d1b2a); border: 1.5px solid rgba(0,229,255,0.3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; }
+.call-bar-icon svg { width: 18px; height: 18px; }
+.call-bar-badge { position: absolute; top: -3px; right: -3px; min-width: 16px; height: 16px; border-radius: 8px; background: #ff1744; color: #fff; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 4px; border: 1.5px solid #060612; }
+.call-bar-text { flex: 1; }
+.call-bar-title { font-size: 13px; color: #e0e0e0; font-weight: 600; }
+.call-bar-sub { font-size: 11px; color: #556; margin-top: 1px; }
+.call-bar-arrow { color: #556; font-size: 18px; transition: transform 0.3s; flex-shrink: 0; }
+.call-bar.open .call-bar-arrow { transform: rotate(180deg); }
+
+.call-sheet { display: none; position: absolute; bottom: 0; left: 0; right: 0; z-index: 16000; background: rgba(8,10,20,0.98); backdrop-filter: blur(20px); border-top: 1px solid rgba(0,229,255,0.15); border-radius: 18px 18px 0 0; max-height: 70vh; overflow: hidden; flex-direction: column; animation: sheetUp 0.3s ease-out; }
+.call-sheet.open { display: flex; }
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.call-sheet-header { display: flex; align-items: center; padding: 14px 16px 10px; border-bottom: 1px solid rgba(0,229,255,0.08); flex-shrink: 0; }
+.call-sheet-header .title { flex: 1; font-size: 15px; color: #e0e0e0; font-weight: 700; }
+.call-sheet-header .count { font-size: 11px; color: #556; margin-left: 8px; }
+.call-sheet-header .close-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #667; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; flex-shrink: 0; }
+.call-sheet-list { flex: 1; overflow-y: auto; padding: 4px 0 20px; -webkit-overflow-scrolling: touch; }
+.call-sheet-item { display: flex; align-items: center; gap: 12px; padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,0.03); animation: slideUp 0.2s ease-out; }
+.call-sheet-item:active { background: rgba(255,255,255,0.04); }
+.call-sheet-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px; font-weight: 700; }
+.call-sheet-avatar.incoming { background: rgba(0,255,136,0.1); color: #00ff88; border: 1px solid rgba(0,255,136,0.2); }
+.call-sheet-avatar.outgoing { background: rgba(0,229,255,0.1); color: #00e5ff; border: 1px solid rgba(0,229,255,0.2); }
+.call-sheet-avatar.missed { background: rgba(255,23,68,0.1); color: #ff1744; border: 1px solid rgba(255,23,68,0.2); }
+.call-sheet-avatar.other { background: rgba(100,100,100,0.1); color: #666; border: 1px solid rgba(100,100,100,0.2); }
+.call-sheet-details { flex: 1; min-width: 0; }
+.call-sheet-name { font-size: 14px; font-weight: 600; color: #e0e0e0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.call-sheet-name.missed { color: #ff5252; }
+.call-sheet-number { font-size: 12px; color: #556; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.call-sheet-right { text-align: right; flex-shrink: 0; }
+.call-sheet-time { font-size: 11px; color: #556; }
+.call-sheet-duration { font-size: 12px; color: #00e5ff; font-weight: 600; margin-top: 2px; }
+.call-sheet-duration.missed { color: #ff5252; }
+.call-sheet-empty { text-align: center; padding: 40px 16px; color: #445; font-size: 13px; }
 @media (max-width: 360px) {
   .code-input { gap: 4px; }
   .code-input input { min-width: 28px; font-size: 16px; }
@@ -113,7 +135,7 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 @media (min-width: 1024px) {
   .login-box { max-width: 440px; padding: 36px 28px; }
   .login-box h2 { font-size: 26px; }
-  .info-panel { max-width: 480px; left: auto; right: 16px; }
+  .info-panel { max-width: 480px; left: auto; right: 16px; bottom: 56px; }
 }
 </style>
 </head>
@@ -167,10 +189,27 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
     <div class="info-row"><span class="label">Accuracy:</span><span class="value" id="accuracy">-</span></div>
     <div class="info-row"><span class="label">Battery:</span><span class="value" id="battery">-</span></div>
     <div class="info-row"><span class="label">Position:</span><span class="value" id="position">-</span></div>
-    <div class="calls-section" id="callsSection" style="display:none">
-      <div class="calls-title">Recent Calls</div>
-      <div id="callsList"></div>
+  </div>
+  <div class="call-bar" id="callBar">
+    <div class="call-bar-handle" id="callBarHandle">
+      <div class="call-bar-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        <div class="call-bar-badge" id="callBarBadge" style="display:none">0</div>
+      </div>
+      <div class="call-bar-text">
+        <div class="call-bar-title">Call History</div>
+        <div class="call-bar-sub" id="callBarSub">No calls yet</div>
+      </div>
+      <div class="call-bar-arrow">&#8964;</div>
     </div>
+  </div>
+  <div class="call-sheet" id="callSheet">
+    <div class="call-sheet-header">
+      <div class="title">Recent Calls</div>
+      <div class="count" id="callSheetCount"></div>
+      <div class="close-btn" id="callSheetClose">&times;</div>
+    </div>
+    <div class="call-sheet-list" id="callSheetList"></div>
   </div>
 </div>
 <div class="dl-overlay" id="dlOverlay">
@@ -381,7 +420,8 @@ document.getElementById('disconnectBtn').addEventListener('click', () => {
   mapContainer.style.display = 'none';
   topBar.style.display = 'none';
   infoPanel.style.display = 'none';
-  document.getElementById('callsSection').style.display = 'none';
+  document.getElementById('callBar').classList.remove('visible', 'open');
+  document.getElementById('callSheet').classList.remove('open');
   inputs.forEach(i => i.value = '');
   inputs[0].focus();
   resetPairingUI();
@@ -481,29 +521,41 @@ function getCallTypeArrow(type) {
 }
 
 function updateCalls(calls) {
-  const section = document.getElementById('callsSection');
-  const list = document.getElementById('callsList');
-  if (!calls || calls.length === 0) { section.style.display = 'none'; return; }
-  section.style.display = 'block';
+  const callBar = document.getElementById('callBar');
+  const badge = document.getElementById('callBarBadge');
+  const sub = document.getElementById('callBarSub');
+  const list = document.getElementById('callSheetList');
+  const count = document.getElementById('callSheetCount');
+  if (!calls || calls.length === 0) {
+    callBar.classList.remove('visible');
+    return;
+  }
+  callBar.classList.add('visible');
+  badge.textContent = calls.length;
+  badge.style.display = 'flex';
+  const recent = calls[0];
+  const recentName = recent.name || 'Unknown';
+  sub.textContent = 'Last: ' + recentName + ' · ' + formatCallTime(recent.date);
+  count.textContent = calls.length + ' calls';
   list.innerHTML = '';
   calls.forEach(call => {
     const typeClass = { 1: 'incoming', 2: 'outgoing', 3: 'missed' }[call.type] || 'other';
     const typeName = getCallTypeLabel(call.type);
-    const arrow = getCallTypeArrow(call.type);
+    const initial = (call.name || '?')[0].toUpperCase();
     const displayName = call.name || 'Unknown';
-    const showNumber = call.number && call.name;
     const durStr = call.duration > 0 ? formatDuration(call.duration) : 'Missed';
     const timeStr = formatCallTime(call.date);
+    const isMissed = call.type === 3;
     const item = document.createElement('div');
-    item.className = 'call-item';
-    item.innerHTML = '<div class="call-type-icon ' + typeClass + '">' + arrow + '</div>'
-      + '<div class="call-info">'
-      + '<div class="call-name">' + escapeHtml(displayName) + '</div>'
-      + (showNumber ? '<div class="call-number">' + escapeHtml(call.number) + '</div>' : '')
+    item.className = 'call-sheet-item';
+    item.innerHTML = '<div class="call-sheet-avatar ' + typeClass + '">' + initial + '</div>'
+      + '<div class="call-sheet-details">'
+      + '<div class="call-sheet-name' + (isMissed ? ' missed' : '') + '">' + escapeHtml(displayName) + '</div>'
+      + '<div class="call-sheet-number">' + escapeHtml(call.number || '') + ' · ' + typeName + '</div>'
       + '</div>'
-      + '<div class="call-meta">'
-      + '<div class="call-time">' + timeStr + '</div>'
-      + '<div class="call-duration">' + durStr + '</div>'
+      + '<div class="call-sheet-right">'
+      + '<div class="call-sheet-time">' + timeStr + '</div>'
+      + '<div class="call-sheet-duration' + (isMissed ? ' missed' : '') + '">' + durStr + '</div>'
       + '</div>';
     list.appendChild(item);
   });
@@ -520,6 +572,14 @@ document.getElementById('openDlBtn').addEventListener('click', () => {
 });
 document.getElementById('dlBackBtn').addEventListener('click', () => {
   document.getElementById('dlOverlay').classList.remove('open');
+});
+document.getElementById('callBarHandle').addEventListener('click', () => {
+  document.getElementById('callSheet').classList.add('open');
+  document.getElementById('callBar').classList.add('open');
+});
+document.getElementById('callSheetClose').addEventListener('click', () => {
+  document.getElementById('callSheet').classList.remove('open');
+  document.getElementById('callBar').classList.remove('open');
 });
 
 (function autoReconnect() {
