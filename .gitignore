@@ -3,3 +3,5 @@ wrangler/
 node_modules/
 *.sqlite*
 local.properties
+tsp-release.keystore
+*.keystore
