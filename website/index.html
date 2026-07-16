@@ -16,15 +16,13 @@
 @keyframes disconnectPulse { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html { height: 100%; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Arabic', sans-serif; background: #060612; color: #e0e0e0; height: 100%; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; -webkit-font-smoothing: antialiased; direction: ltr; text-align: left; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #060612; color: #e0e0e0; height: 100%; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; -webkit-font-smoothing: antialiased; }
 body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 30% 20%, rgba(0,229,255,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(124,77,255,0.04) 0%, transparent 50%); animation: bgGlow 8s ease-in-out infinite; pointer-events: none; z-index: 0; }
-.header { background: linear-gradient(135deg, #0a0e1a, #0d1b2a); padding: 10px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(0,229,255,0.2); flex-shrink: 0; position: relative; z-index: 1; min-height: 44px; direction: ltr; }
+.header { background: linear-gradient(135deg, #0a0e1a, #0d1b2a); padding: 10px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(0,229,255,0.2); flex-shrink: 0; position: relative; z-index: 1; min-height: 44px; }
 .header h1 { font-size: 17px; color: #00e5ff; font-weight: 800; letter-spacing: 2px; animation: neonPulse 3s ease-in-out infinite; }
 .header .status { font-size: 11px; color: #556; margin-left: auto; transition: color 0.3s; white-space: nowrap; }
 .header .status.online { color: #00ff88; text-shadow: 0 0 6px rgba(0,255,136,0.4); }
 .header .status.disconnected { color: #ff1744; text-shadow: 0 0 6px rgba(255,23,68,0.4); }
-.lang-btn { background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 5px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 600; flex-shrink: 0; transition: all 0.3s; }
-.lang-btn:active { background: rgba(0,229,255,0.15); }
 .login-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; position: relative; z-index: 1; }
 .login-box { background: linear-gradient(145deg, #0d1117, #0a0e1a); padding: 28px 20px; border-radius: 18px; text-align: center; box-shadow: 0 0 40px rgba(0,229,255,0.05), 0 8px 32px rgba(0,0,0,0.6); border: 1px solid rgba(0,229,255,0.15); width: 100%; max-width: 380px; animation: neonBorder 4s ease-in-out infinite; }
 .login-box .brand { margin-bottom: 16px; }
@@ -46,7 +44,7 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 .pairing-wait .cancel-btn:active { background: rgba(255,23,68,0.1); }
 .map-container { flex: 1; position: relative; display: none; z-index: 1; }
 #map { width: 100%; height: 100%; }
-.top-bar { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 10000; display: none; direction: ltr; }
+.top-bar { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 10000; display: none; }
 .top-bar .refresh-btn { background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
 .top-bar .refresh-btn:active { background: rgba(0,229,255,0.15); }
 .top-bar .disconnect-btn { position: absolute; right: 8px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); border: 1px solid rgba(255,23,68,0.3); color: #ff5252; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
@@ -58,7 +56,7 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 .disconnected-overlay .title { color: #ff1744; font-size: 20px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
 .disconnected-overlay .sub { color: #667; font-size: 13px; }
 .disconnected-overlay .retry-text { color: #556; font-size: 11px; animation: pulse 2s ease-in-out infinite; }
-.info-panel { position: absolute; bottom: 16px; left: 16px; right: 16px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(0,229,255,0.15); z-index: 10000; display: none; max-height: 40vh; overflow-y: auto; }
+.info-panel { position: absolute; bottom: 16px; left: 16px; right: 16px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(0,229,255,0.15); z-index: 10000; display: none; max-height: 45vh; overflow-y: auto; }
 .info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; gap: 6px; }
 .info-row .label { color: #556; flex-shrink: 0; }
 .info-row .value { font-weight: 600; text-align: right; word-break: break-all; color: #c0c0c0; }
@@ -66,18 +64,19 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 .info-row .value.old { color: #ff1744; }
 .calls-section { margin-top: 10px; border-top: 1px solid rgba(0,229,255,0.1); padding-top: 10px; }
 .calls-title { font-size: 10px; color: #7c4dff; letter-spacing: 2px; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
-.call-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.03); animation: slideUp 0.3s ease-out; }
-.call-type { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-.call-type.incoming { background: #00ff88; box-shadow: 0 0 4px rgba(0,255,136,0.5); }
-.call-type.outgoing { background: #00e5ff; box-shadow: 0 0 4px rgba(0,229,255,0.5); }
-.call-type.missed { background: #ff1744; box-shadow: 0 0 4px rgba(255,23,68,0.5); }
-.call-type.other { background: #666; }
+.call-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; margin-bottom: 4px; animation: slideUp 0.3s ease-out; background: rgba(255,255,255,0.02); }
+.call-item:active { background: rgba(255,255,255,0.05); }
+.call-type-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px; }
+.call-type-icon.incoming { background: rgba(0,255,136,0.1); color: #00ff88; }
+.call-type-icon.outgoing { background: rgba(0,229,255,0.1); color: #00e5ff; }
+.call-type-icon.missed { background: rgba(255,23,68,0.1); color: #ff1744; }
+.call-type-icon.other { background: rgba(100,100,100,0.1); color: #666; }
 .call-info { flex: 1; min-width: 0; }
-.call-name { font-size: 12px; color: #c0c0c0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.call-number { font-size: 10px; color: #556; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.call-name { font-size: 13px; color: #e0e0e0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.call-number { font-size: 11px; color: #556; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
 .call-meta { text-align: right; flex-shrink: 0; }
 .call-time { font-size: 10px; color: #556; }
-.call-duration { font-size: 9px; color: #445; }
+.call-duration { font-size: 11px; color: #00e5ff; font-weight: 600; margin-top: 1px; }
 @media (max-width: 360px) {
   .code-input { gap: 4px; }
   .code-input input { min-width: 28px; font-size: 16px; }
@@ -95,16 +94,15 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 <div class="header">
   <h1>TSP</h1>
   <div class="status" id="status">Not connected</div>
-  <button class="lang-btn" id="langBtn">عربي</button>
 </div>
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
     <div class="brand">
-      <h2 data-en="Tracker ID" data-ar="معرّف التتبع">Tracker ID</h2>
+      <h2>Tracker ID</h2>
       <div class="subtitle">TRACKER SYSTEM PRO</div>
       <div class="made-by">MADE BY OMR</div>
     </div>
-    <p data-en="Enter the 6-digit Tracker ID code" data-ar="أدخل رمز معرّف التتبع المكون من 6 أرقام">Enter the 6-digit Tracker ID code</p>
+    <p>Enter the 6-digit Tracker ID code</p>
     <div class="code-input" id="codeInput">
       <input type="text" maxlength="1" inputmode="numeric" autofocus>
       <input type="text" maxlength="1" inputmode="numeric">
@@ -113,42 +111,41 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
       <input type="text" maxlength="1" inputmode="numeric">
       <input type="text" maxlength="1" inputmode="numeric">
     </div>
-    <button class="connect-btn" id="connectBtn" disabled data-en="Connect" data-ar="اتصال">Connect</button>
+    <button class="connect-btn" id="connectBtn" disabled>Connect</button>
     <div class="pairing-wait" id="pairingWait">
       <div class="spinner"></div>
-      <div class="text" data-en="Waiting for acceptance..." data-ar="في انتظار القبول...">Waiting for acceptance...</div>
-      <div class="sub" data-en="Approve on the tracked device" data-ar="الموافقة من الجهاز المُتتبع">Approve on the tracked device</div>
-      <button class="cancel-btn" id="cancelPairBtn" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+      <div class="text">Waiting for acceptance...</div>
+      <div class="sub">Approve on the tracked device</div>
+      <button class="cancel-btn" id="cancelPairBtn">Cancel</button>
     </div>
   </div>
 </div>
 <div class="map-container" id="mapContainer">
   <div class="top-bar" id="topBar">
-    <button class="refresh-btn" id="refreshBtn" data-en="Refresh" data-ar="تحديث">Refresh</button>
-    <button class="disconnect-btn" id="disconnectBtn" data-en="Logout" data-ar="خروج">Logout</button>
+    <button class="refresh-btn" id="refreshBtn">Refresh</button>
+    <button class="disconnect-btn" id="disconnectBtn">Logout</button>
   </div>
   <div id="map"></div>
   <div class="disconnected-overlay" id="disconnectedOverlay">
     <div class="icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="#ff1744" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
     </div>
-    <div class="title" data-en="DISCONNECTED" data-ar="غير متصل">DISCONNECTED</div>
-    <div class="sub" data-en="Device went offline" data-ar="الجهاز غير متصل">Device went offline</div>
-    <div class="retry-text" data-en="Waiting for reconnection..." data-ar="في انتظار إعادة الاتصال...">Waiting for reconnection...</div>
+    <div class="title">DISCONNECTED</div>
+    <div class="sub">Device went offline</div>
+    <div class="retry-text">Waiting for reconnection...</div>
   </div>
   <div class="info-panel" id="infoPanel">
-    <div class="info-row"><span class="label" data-en="Last update:" data-ar="آخر تحديث:">Last update:</span><span class="value" id="lastUpdate">-</span></div>
-    <div class="info-row"><span class="label" data-en="Accuracy:" data-ar="الدقة:">Accuracy:</span><span class="value" id="accuracy">-</span></div>
-    <div class="info-row"><span class="label" data-en="Battery:" data-ar="البطارية:">Battery:</span><span class="value" id="battery">-</span></div>
-    <div class="info-row"><span class="label" data-en="Position:" data-ar="الموقع:">Position:</span><span class="value" id="position">-</span></div>
+    <div class="info-row"><span class="label">Last update:</span><span class="value" id="lastUpdate">-</span></div>
+    <div class="info-row"><span class="label">Accuracy:</span><span class="value" id="accuracy">-</span></div>
+    <div class="info-row"><span class="label">Battery:</span><span class="value" id="battery">-</span></div>
+    <div class="info-row"><span class="label">Position:</span><span class="value" id="position">-</span></div>
     <div class="calls-section" id="callsSection" style="display:none">
-      <div class="calls-title" data-en="Recent Calls" data-ar="المكالمات الأخيرة">Recent Calls</div>
+      <div class="calls-title">Recent Calls</div>
       <div id="callsList"></div>
     </div>
   </div>
 </div>
 <script>
-let currentLang = localStorage.getItem('tsp-lang') || 'en';
 let deviceId = localStorage.getItem('tsp-device-id');
 if (!deviceId) { deviceId = crypto.randomUUID(); localStorage.setItem('tsp-device-id', deviceId); }
 let map, marker, trail, currentCode, refreshInterval, pairPollInterval, lastDataTime = 0, isDisconnected = false;
@@ -161,18 +158,6 @@ const infoPanel = document.getElementById('infoPanel');
 const pairingWait = document.getElementById('pairingWait');
 const disconnectedOverlay = document.getElementById('disconnectedOverlay');
 const API_BASE = "https://tsp.omaromartest12.workers.dev";
-
-function toggleLang() {
-  currentLang = currentLang === 'en' ? 'ar' : 'en';
-  localStorage.setItem('tsp-lang', currentLang);
-  applyLang();
-}
-function applyLang() {
-  document.getElementById('langBtn').textContent = currentLang === 'en' ? 'عربي' : 'English';
-  document.querySelectorAll('[data-en]').forEach(el => { el.textContent = el.getAttribute('data-' + currentLang); });
-}
-applyLang();
-document.getElementById('langBtn').addEventListener('click', toggleLang);
 
 inputs.forEach((input, i) => {
   input.addEventListener('input', (e) => {
@@ -239,6 +224,7 @@ function pollPairStatus(requestId) {
       } else if (data.status === 'declined') {
         clearInterval(pairPollInterval);
         resetPairingUI();
+        alert('Connection was declined by the device.');
       }
     } catch (e) {}
   }, 2000);
@@ -267,7 +253,7 @@ function startTracking() {
   fetchLocation();
   refreshInterval = setInterval(fetchLocation, 1000);
   setInterval(checkDisconnected, 2000);
-  document.getElementById('status').textContent = (currentLang === 'ar' ? 'متصل: ' : 'Connected: ') + currentCode + (currentLang === 'ar' ? ' | مباشر' : ' | Live');
+  document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live';
   document.getElementById('status').className = 'status online';
 }
 
@@ -277,7 +263,7 @@ function checkDisconnected() {
   if (elapsed > 15 && !isDisconnected) {
     isDisconnected = true;
     disconnectedOverlay.classList.add('visible');
-    document.getElementById('status').textContent = currentLang === 'ar' ? 'غير متصل' : 'Disconnected';
+    document.getElementById('status').textContent = 'Disconnected';
     document.getElementById('status').className = 'status disconnected';
   }
 }
@@ -299,7 +285,7 @@ document.getElementById('disconnectBtn').addEventListener('click', () => {
   inputs.forEach(i => i.value = '');
   inputs[0].focus();
   resetPairingUI();
-  document.getElementById('status').textContent = currentLang === 'ar' ? 'غير متصل' : 'Not connected';
+  document.getElementById('status').textContent = 'Not connected';
   document.getElementById('status').className = 'status';
 });
 
@@ -329,12 +315,12 @@ async function fetchLocation() {
     if (isDisconnected) {
       isDisconnected = false;
       disconnectedOverlay.classList.remove('visible');
-      document.getElementById('status').textContent = (currentLang === 'ar' ? 'متصل: ' : 'Connected: ') + currentCode + (currentLang === 'ar' ? ' | مباشر' : ' | Live');
+      document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live';
       document.getElementById('status').className = 'status online';
     }
     updateMap(data);
     updateCalls(data.calls || []);
-    document.getElementById('status').textContent = (currentLang === 'ar' ? 'متصل: ' : 'Connected: ') + currentCode + (currentLang === 'ar' ? ' | مباشر' : ' | Live');
+    document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live';
   } catch (e) {}
 }
 
@@ -347,12 +333,51 @@ function updateMap(data) {
   map.setView(pos, 16);
   infoPanel.style.display = 'block';
   const ageSec = Math.floor((Date.now() - new Date(data.timestamp)) / 1000);
-  const ageText = ageSec < 5 ? (currentLang === 'ar' ? 'الآن' : 'Just now') : ageSec < 60 ? ageSec + (currentLang === 'ar' ? ' ث' : 's ago') : Math.floor(ageSec/60) + (currentLang === 'ar' ? ' د ' : 'm ') + (ageSec%60) + (currentLang === 'ar' ? ' ث' : 's ago');
+  const ageText = ageSec < 5 ? 'Just now' : ageSec < 60 ? ageSec + 's ago' : Math.floor(ageSec/60) + 'm ' + (ageSec%60) + 's ago';
   document.getElementById('lastUpdate').textContent = ageText;
   document.getElementById('lastUpdate').className = 'value' + (ageSec > 30 ? ' stale' : ageSec > 120 ? ' old' : '');
   document.getElementById('accuracy').textContent = data.accuracy ? data.accuracy.toFixed(0) + 'm' : 'N/A';
   document.getElementById('battery').textContent = data.battery != null ? data.battery + '%' : 'N/A';
   document.getElementById('position').textContent = lat.toFixed(5) + ', ' + lng.toFixed(5);
+}
+
+function formatDuration(seconds) {
+  if (seconds < 60) return seconds + 's';
+  if (seconds < 3600) return Math.floor(seconds/60) + 'm ' + (seconds%60) + 's';
+  return Math.floor(seconds/3600) + 'h ' + Math.floor((seconds%3600)/60) + 'm';
+}
+
+function formatCallTime(timestamp) {
+  const now = Date.now();
+  const diff = now - timestamp;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return mins + 'm ago';
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return hours + 'h ago';
+  const days = Math.floor(hours / 24);
+  return days + 'd ago';
+}
+
+function getCallTypeLabel(type) {
+  switch(type) {
+    case 1: return 'Incoming';
+    case 2: return 'Outgoing';
+    case 3: return 'Missed';
+    case 4: return 'Voicemail';
+    case 5: return 'Rejected';
+    case 6: return 'Blocked';
+    default: return 'Other';
+  }
+}
+
+function getCallTypeArrow(type) {
+  switch(type) {
+    case 1: return '\u2199';
+    case 2: return '\u2197';
+    case 3: return '\u2716';
+    default: return '\u2022';
+  }
 }
 
 function updateCalls(calls) {
@@ -362,19 +387,32 @@ function updateCalls(calls) {
   section.style.display = 'block';
   list.innerHTML = '';
   calls.forEach(call => {
-    const typeMap = { 1: 'incoming', 2: 'outgoing', 3: 'missed' };
-    const typeClass = typeMap[call.type] || 'other';
-    const name = call.name || call.number || 'Unknown';
-    const number = call.name ? call.number : '';
-    const mins = Math.floor((Date.now() - call.date) / 60000);
-    const timeStr = mins < 1 ? (currentLang === 'ar' ? 'الآن' : 'Now') : mins < 60 ? mins + (currentLang === 'ar' ? ' د' : 'm') : Math.floor(mins/60) + (currentLang === 'ar' ? ' س' : 'h');
-    const dur = call.duration;
-    const durStr = dur > 0 ? Math.floor(dur/60) + ':' + String(dur%60).padStart(2,'0') : '-';
+    const typeClass = { 1: 'incoming', 2: 'outgoing', 3: 'missed' }[call.type] || 'other';
+    const typeName = getCallTypeLabel(call.type);
+    const arrow = getCallTypeArrow(call.type);
+    const displayName = call.name || 'Unknown';
+    const showNumber = call.number && call.name;
+    const durStr = call.duration > 0 ? formatDuration(call.duration) : 'Missed';
+    const timeStr = formatCallTime(call.date);
     const item = document.createElement('div');
     item.className = 'call-item';
-    item.innerHTML = '<div class="call-type ' + typeClass + '"></div><div class="call-info"><div class="call-name">' + name + '</div>' + (number ? '<div class="call-number">' + number + '</div>' : '') + '</div><div class="call-meta"><div class="call-time">' + timeStr + '</div><div class="call-duration">' + durStr + '</div></div>';
+    item.innerHTML = '<div class="call-type-icon ' + typeClass + '">' + arrow + '</div>'
+      + '<div class="call-info">'
+      + '<div class="call-name">' + escapeHtml(displayName) + '</div>'
+      + (showNumber ? '<div class="call-number">' + escapeHtml(call.number) + '</div>' : '')
+      + '</div>'
+      + '<div class="call-meta">'
+      + '<div class="call-time">' + timeStr + '</div>'
+      + '<div class="call-duration">' + durStr + '</div>'
+      + '</div>';
     list.appendChild(item);
   });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 (function autoReconnect() {

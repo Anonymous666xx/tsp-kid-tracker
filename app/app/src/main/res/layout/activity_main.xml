@@ -10,26 +10,6 @@
     android:layoutDirection="ltr"
     android:textDirection="ltr">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="end"
-        android:layout_marginBottom="8dp">
-
-        <TextView
-            android:id="@+id/langToggle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="عربي"
-            android:textColor="#00e5ff"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:padding="8dp"
-            android:background="@drawable/code_input_bg" />
-
-    </LinearLayout>
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

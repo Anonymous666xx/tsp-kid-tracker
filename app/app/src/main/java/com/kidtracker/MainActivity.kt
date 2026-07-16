@@ -11,6 +11,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.Gravity
+import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -23,7 +24,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.Locale
 import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
@@ -44,18 +44,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        val currentLang = prefs.getString("app_lang", "en") ?: "en"
-        binding.langToggle.text = if (currentLang == "en") "عربي" else "EN"
-        binding.langToggle.setOnClickListener {
-            val newLang = if (currentLang == "en") "ar" else "en"
-            prefs.edit().putString("app_lang", newLang).apply()
-            val locale = Locale(newLang)
-            val config = resources.configuration
-            config.setLocale(locale)
-            @Suppress("DEPRECATION")
-            resources.updateConfiguration(config, resources.displayMetrics)
-            recreate()
-        }
 
         binding.stopButton.setOnClickListener {
             pollingPair = false
@@ -88,8 +76,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showSetupUI() {
-        binding.setupSection.visibility = android.view.View.VISIBLE
-        binding.activeSection.visibility = android.view.View.GONE
+        binding.setupSection.visibility = View.VISIBLE
+        binding.activeSection.visibility = View.GONE
         binding.code1.setText("")
         binding.code2.setText("")
         binding.code3.setText("")
@@ -126,14 +114,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startTracking(code: String) {
-        val intent = Intent(this, LocationService::class.java).apply {
-            putExtra("tracking_code", code)
+        try {
+            val intent = Intent(this, LocationService::class.java).apply {
+                putExtra("tracking_code", code)
+            }
+            ContextCompat.startForegroundService(this, intent)
+            binding.setupSection.visibility = View.GONE
+            binding.activeSection.visibility = View.VISIBLE
+            binding.activeCode.text = "Code: $code"
+            startPairPolling(code)
+        } catch (e: Exception) {
+            Log.e("TrackerID", "Failed to start tracking", e)
+            Toast.makeText(this, "Failed to start: ${e.message}", Toast.LENGTH_LONG).show()
         }
-        ContextCompat.startForegroundService(this, intent)
-        binding.setupSection.visibility = android.view.View.GONE
-        binding.activeSection.visibility = android.view.View.VISIBLE
-        binding.activeCode.text = "Code: $code"
-        startPairPolling(code)
     }
 
     private fun startPairPolling(code: String) {
@@ -168,69 +161,74 @@ class MainActivity : AppCompatActivity() {
                 }
                 conn.disconnect()
             } catch (e: Exception) {
-                // ignore
+                Log.e("TrackerID", "Failed to fetch pending pairs", e)
             }
         }
     }
 
     private fun showPairDialog(id: String, deviceInfo: String, code: String) {
         dialogShowing = true
-        val dialog = AlertDialog.Builder(this).create()
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        dialog.window?.setGravity(Gravity.CENTER)
+        try {
+            val dialog = AlertDialog.Builder(this).create()
+            dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            dialog.window?.setGravity(Gravity.CENTER)
 
-        val layout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(60, 50, 60, 40)
-            setBackgroundColor(Color.parseColor("#0d1117"))
-        }
-
-        val title = TextView(this).apply {
-            text = "Connection Request"
-            setTextColor(Color.parseColor("#00e5ff"))
-            textSize = 20f
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 16)
-        }
-
-        val device = TextView(this).apply {
-            text = "A device wants to track this phone:\n\n$deviceInfo\n\nAccept?"
-            setTextColor(Color.parseColor("#aabbbb"))
-            textSize = 14f
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 30)
-        }
-
-        val acceptBtn = Button(this).apply {
-            text = "ACCEPT"
-            setTextColor(Color.parseColor("#060612"))
-            setBackgroundColor(Color.parseColor("#00e5ff"))
-            setOnClickListener {
-                dialog.dismiss()
-                dialogShowing = false
-                respondToPair(id, "accepted", code)
+            val layout = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(60, 50, 60, 40)
+                setBackgroundColor(Color.parseColor("#0d1117"))
             }
-        }
 
-        val declineBtn = Button(this).apply {
-            text = "DECLINE"
-            setTextColor(Color.parseColor("#ff5252"))
-            setBackgroundColor(Color.TRANSPARENT)
-            setOnClickListener {
-                dialog.dismiss()
-                dialogShowing = false
-                respondToPair(id, "declined", code)
+            val title = TextView(this).apply {
+                text = "Connection Request"
+                setTextColor(Color.parseColor("#00e5ff"))
+                textSize = 20f
+                gravity = Gravity.CENTER
+                setPadding(0, 0, 0, 16)
             }
-        }
 
-        layout.addView(title)
-        layout.addView(device)
-        layout.addView(acceptBtn)
-        layout.addView(declineBtn)
-        dialog.setView(layout)
-        dialog.setCancelable(false)
-        dialog.setOnDismissListener { dialogShowing = false }
-        dialog.show()
+            val device = TextView(this).apply {
+                text = "A device wants to track this phone:\n\n$deviceInfo\n\nAccept?"
+                setTextColor(Color.parseColor("#aabbbb"))
+                textSize = 14f
+                gravity = Gravity.CENTER
+                setPadding(0, 0, 0, 30)
+            }
+
+            val acceptBtn = Button(this).apply {
+                text = "ACCEPT"
+                setTextColor(Color.parseColor("#060612"))
+                setBackgroundColor(Color.parseColor("#00e5ff"))
+                setOnClickListener {
+                    dialog.dismiss()
+                    dialogShowing = false
+                    respondToPair(id, "accept", code)
+                }
+            }
+
+            val declineBtn = Button(this).apply {
+                text = "DECLINE"
+                setTextColor(Color.parseColor("#ff5252"))
+                setBackgroundColor(Color.TRANSPARENT)
+                setOnClickListener {
+                    dialog.dismiss()
+                    dialogShowing = false
+                    respondToPair(id, "decline", code)
+                }
+            }
+
+            layout.addView(title)
+            layout.addView(device)
+            layout.addView(acceptBtn)
+            layout.addView(declineBtn)
+            dialog.setView(layout)
+            dialog.setCancelable(false)
+            dialog.setOnDismissListener { dialogShowing = false }
+            dialog.show()
+        } catch (e: Exception) {
+            Log.e("TrackerID", "Failed to show pair dialog", e)
+            dialogShowing = false
+        }
     }
 
     private fun respondToPair(id: String, action: String, code: String) {

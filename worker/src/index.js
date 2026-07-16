@@ -171,7 +171,7 @@ async function handlePendingPairs(request, env, corsHeaders) {
 }
 
 const WEBSITE_HTML = `<!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -185,18 +185,15 @@ const WEBSITE_HTML = `<!DOCTYPE html>
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
-* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 html { height: 100%; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #060612; color: #e0e0e0; height: 100%; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; -webkit-font-smoothing: antialiased; }
-body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 30% 20%, rgba(0,229,255,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(124,77,255,0.04) 0%, transparent 50%); animation: bgGlow 8s ease-in-out infinite; pointer-events: none; z-index: 0; }
-.header { background: linear-gradient(135deg, #0a0e1a, #0d1b2a); padding: 10px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(0,229,255,0.2); flex-shrink: 0; position: relative; z-index: 1; min-height: 44px; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #060612; color: #e0e0e0; height: 100%; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+.header { background: linear-gradient(135deg, #0a0e1a, #0d1b2a); padding: 10px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(0,229,255,0.2); flex-shrink: 0; z-index: 1; min-height: 44px; }
 .header h1 { font-size: 17px; color: #00e5ff; font-weight: 800; letter-spacing: 2px; animation: neonPulse 3s ease-in-out infinite; }
-.header .status { font-size: 11px; color: #556; margin-left: auto; margin-right: 50px; transition: color 0.3s; white-space: nowrap; }
+.header .status { font-size: 11px; color: #556; margin-left: auto; transition: color 0.3s; white-space: nowrap; }
 .header .status.online { color: #00ff88; text-shadow: 0 0 6px rgba(0,255,136,0.4); }
-.lang-btn { background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 5px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 600; position: absolute; right: 12px; flex-shrink: 0; transition: all 0.3s; }
-.lang-btn:hover { background: rgba(0,229,255,0.15); }
-.login-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; position: relative; z-index: 1; }
-.login-box { background: linear-gradient(145deg, #0d1117, #0a0e1a); padding: 28px 20px; border-radius: 18px; text-align: center; box-shadow: 0 0 40px rgba(0,229,255,0.05), 0 8px 32px rgba(0,0,0,0.6); border: 1px solid rgba(0,229,255,0.15); width: 100%; max-width: 380px; animation: neonBorder 4s ease-in-out infinite; }
+.login-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 1; }
+.login-box { background: linear-gradient(145deg, #0d1117, #0a0e1a); padding: 28px 20px; border-radius: 18px; text-align: center; box-shadow: 0 0 40px rgba(0,229,255,0.05); border: 1px solid rgba(0,229,255,0.15); width: 100%; max-width: 380px; animation: neonBorder 4s ease-in-out infinite; }
 .login-box .brand { margin-bottom: 16px; }
 .login-box h2 { font-size: 22px; color: #00e5ff; font-weight: 800; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0,229,255,0.3); margin-bottom: 4px; }
 .login-box .subtitle { color: rgba(124,77,255,0.7); font-size: 10px; letter-spacing: 2px; font-weight: 600; margin-bottom: 4px; }
@@ -212,99 +209,79 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 .pairing-wait .spinner { width: 40px; height: 40px; border: 3px solid rgba(0,229,255,0.1); border-top-color: #00e5ff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 12px; }
 .pairing-wait .text { color: #00e5ff; font-size: 14px; font-weight: 600; animation: pulse 2s ease-in-out infinite; }
 .pairing-wait .sub { color: #556; font-size: 12px; margin-top: 6px; }
-.pairing-wait .cancel-btn { margin-top: 16px; padding: 8px 20px; background: transparent; border: 1px solid rgba(255,23,68,0.3); color: #ff5252; border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.3s; }
-.pairing-wait .cancel-btn:hover { background: rgba(255,23,68,0.1); }
+.pairing-wait .cancel-btn { margin-top: 16px; padding: 8px 20px; background: transparent; border: 1px solid rgba(255,23,68,0.3); color: #ff5252; border-radius: 8px; font-size: 12px; cursor: pointer; }
 .map-container { flex: 1; position: relative; display: none; z-index: 1; }
 #map { width: 100%; height: 100%; }
-.info-panel { position: absolute; bottom: 16px; left: 16px; right: 16px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(0,229,255,0.15); z-index: 1000; display: none; max-height: 40vh; overflow-y: auto; }
-.info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; gap: 6px; }
-.info-row .label { color: #556; flex-shrink: 0; }
-.info-row .value { font-weight: 600; text-align: end; word-break: break-all; color: #c0c0c0; }
+.top-bar { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 10000; display: none; }
+.top-bar .refresh-btn { background: rgba(6,6,18,0.92); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
+.top-bar .disconnect-btn { position: absolute; right: 8px; background: rgba(6,6,18,0.92); border: 1px solid rgba(255,23,68,0.3); color: #ff5252; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+.info-panel { position: absolute; bottom: 16px; left: 16px; right: 16px; background: rgba(6,6,18,0.92); padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(0,229,255,0.15); z-index: 10000; display: none; max-height: 45vh; overflow-y: auto; }
+.info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+.info-row .label { color: #556; }
+.info-row .value { font-weight: 600; color: #c0c0c0; }
 .info-row .value.stale { color: #ff9100; }
 .info-row .value.old { color: #ff1744; }
 .calls-section { margin-top: 10px; border-top: 1px solid rgba(0,229,255,0.1); padding-top: 10px; }
 .calls-title { font-size: 10px; color: #7c4dff; letter-spacing: 2px; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
-.call-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.03); animation: slideUp 0.3s ease-out; }
-.call-type { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-.call-type.incoming { background: #00ff88; box-shadow: 0 0 4px rgba(0,255,136,0.5); }
-.call-type.outgoing { background: #00e5ff; box-shadow: 0 0 4px rgba(0,229,255,0.5); }
-.call-type.missed { background: #ff1744; box-shadow: 0 0 4px rgba(255,23,68,0.5); }
-.call-type.other { background: #666; }
+.call-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; margin-bottom: 4px; animation: slideUp 0.3s ease-out; background: rgba(255,255,255,0.02); }
+.call-type-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px; }
+.call-type-icon.incoming { background: rgba(0,255,136,0.1); color: #00ff88; }
+.call-type-icon.outgoing { background: rgba(0,229,255,0.1); color: #00e5ff; }
+.call-type-icon.missed { background: rgba(255,23,68,0.1); color: #ff1744; }
+.call-type-icon.other { background: rgba(100,100,100,0.1); color: #666; }
 .call-info { flex: 1; min-width: 0; }
-.call-name { font-size: 12px; color: #c0c0c0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.call-number { font-size: 10px; color: #556; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.call-name { font-size: 13px; color: #e0e0e0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.call-number { font-size: 11px; color: #556; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
 .call-meta { text-align: right; flex-shrink: 0; }
 .call-time { font-size: 10px; color: #556; }
-.call-duration { font-size: 9px; color: #445; }
-.top-bar { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 1000; display: none; }
-.top-bar .refresh-btn { background: rgba(6,6,18,0.92); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
-.top-bar .disconnect-btn { position: absolute; right: 8px; background: rgba(6,6,18,0.92); border: 1px solid rgba(255,23,68,0.3); color: #ff5252; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
-@media (max-width: 360px) {
-  .code-input { gap: 4px; }
-  .code-input input { min-width: 28px; font-size: 16px; }
-  .login-box { padding: 20px 14px; }
-  .login-box h2 { font-size: 18px; }
-}
-@media (min-width: 1024px) {
-  .login-box { max-width: 440px; padding: 36px 28px; }
-  .login-box h2 { font-size: 26px; }
-  .info-panel { max-width: 480px; left: auto; right: 16px; }
-}
+.call-duration { font-size: 11px; color: #00e5ff; font-weight: 600; margin-top: 1px; }
+@media (max-width: 360px) { .code-input { gap: 4px; } .code-input input { min-width: 28px; font-size: 16px; } }
 </style>
 </head>
 <body>
 <div class="header">
   <h1>TSP</h1>
-  <div class="status" id="status" data-en="Not connected" data-ar="غير متصل">Not connected</div>
-  <button class="lang-btn" id="langBtn" onclick="toggleLang()">عربي</button>
+  <div class="status" id="status">Not connected</div>
 </div>
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
     <div class="brand">
-      <h2 data-en="Tracker ID" data-ar="معرّف التتبع">Tracker ID</h2>
+      <h2>Tracker ID</h2>
       <div class="subtitle">TRACKER SYSTEM PRO</div>
       <div class="made-by">MADE BY OMR</div>
     </div>
-    <p data-en="Enter the 6-digit Tracker ID code" data-ar="أدخل رمز معرّف التتبع المكون من 6 أرقام">Enter the 6-digit Tracker ID code</p>
-    <div class="code-input" id="codeInput">
-      <input type="text" maxlength="1" inputmode="numeric" autofocus>
-      <input type="text" maxlength="1" inputmode="numeric">
-      <input type="text" maxlength="1" inputmode="numeric">
-      <input type="text" maxlength="1" inputmode="numeric">
-      <input type="text" maxlength="1" inputmode="numeric">
-      <input type="text" maxlength="1" inputmode="numeric">
-    </div>
-    <button class="connect-btn" id="connectBtn" disabled data-en="Connect" data-ar="اتصال">Connect</button>
+    <p>Enter the 6-digit Tracker ID code</p>
+    <div class="code-input"><input type="text" maxlength="1" inputmode="numeric" autofocus><input type="text" maxlength="1" inputmode="numeric"><input type="text" maxlength="1" inputmode="numeric"><input type="text" maxlength="1" inputmode="numeric"><input type="text" maxlength="1" inputmode="numeric"><input type="text" maxlength="1" inputmode="numeric"></div>
+    <button class="connect-btn" id="connectBtn" disabled>Connect</button>
     <div class="pairing-wait" id="pairingWait">
       <div class="spinner"></div>
-      <div class="text" data-en="Waiting for acceptance..." data-ar="في انتظار القبول...">Waiting for acceptance...</div>
-      <div class="sub" data-en="Approve on the tracked device" data-ar="الموافقة من الجهاز المُتتبع">Approve on the tracked device</div>
-      <button class="cancel-btn" id="cancelPairBtn" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+      <div class="text">Waiting for acceptance...</div>
+      <div class="sub">Approve on the tracked device</div>
+      <button class="cancel-btn" id="cancelPairBtn">Cancel</button>
     </div>
   </div>
 </div>
 <div class="map-container" id="mapContainer">
   <div class="top-bar" id="topBar">
-    <button class="refresh-btn" id="refreshBtn" data-en="Refresh" data-ar="تحديث">Refresh</button>
-    <button class="disconnect-btn" id="disconnectBtn" data-en="Disconnect" data-ar="قطع الاتصال">Disconnect</button>
+    <button class="refresh-btn" id="refreshBtn">Refresh</button>
+    <button class="disconnect-btn" id="disconnectBtn">Logout</button>
   </div>
   <div id="map"></div>
   <div class="info-panel" id="infoPanel">
-    <div class="info-row"><span class="label" data-en="Last update:" data-ar="آخر تحديث:">Last update:</span><span class="value" id="lastUpdate">-</span></div>
-    <div class="info-row"><span class="label" data-en="Accuracy:" data-ar="الدقة:">Accuracy:</span><span class="value" id="accuracy">-</span></div>
-    <div class="info-row"><span class="label" data-en="Battery:" data-ar="البطارية:">Battery:</span><span class="value" id="battery">-</span></div>
-    <div class="info-row"><span class="label" data-en="Position:" data-ar="الموقع:">Position:</span><span class="value" id="position">-</span></div>
+    <div class="info-row"><span class="label">Last update:</span><span class="value" id="lastUpdate">-</span></div>
+    <div class="info-row"><span class="label">Accuracy:</span><span class="value" id="accuracy">-</span></div>
+    <div class="info-row"><span class="label">Battery:</span><span class="value" id="battery">-</span></div>
+    <div class="info-row"><span class="label">Position:</span><span class="value" id="position">-</span></div>
     <div class="calls-section" id="callsSection" style="display:none">
-      <div class="calls-title" data-en="Recent Calls" data-ar="المكالمات الأخيرة">Recent Calls</div>
+      <div class="calls-title">Recent Calls</div>
       <div id="callsList"></div>
     </div>
   </div>
 </div>
 <script>
-let currentLang = localStorage.getItem('tsp-lang') || 'en';
 let deviceId = localStorage.getItem('tsp-device-id');
 if (!deviceId) { deviceId = crypto.randomUUID(); localStorage.setItem('tsp-device-id', deviceId); }
-let map, marker, trail, currentCode, refreshInterval, pairPollInterval;
+let map, marker, trail, currentCode, refreshInterval, pairPollInterval, lastDataTime = 0, isDisconnected = false;
 const inputs = document.querySelectorAll('.code-input input');
 const connectBtn = document.getElementById('connectBtn');
 const loginScreen = document.getElementById('loginScreen');
@@ -313,193 +290,33 @@ const topBar = document.getElementById('topBar');
 const infoPanel = document.getElementById('infoPanel');
 const pairingWait = document.getElementById('pairingWait');
 const API_BASE = "https://tsp.omaromartest12.workers.dev";
-
-function toggleLang() {
-  currentLang = currentLang === 'en' ? 'ar' : 'en';
-  localStorage.setItem('tsp-lang', currentLang);
-  applyLang();
-}
-function applyLang() {
-  document.documentElement.setAttribute('lang', currentLang);
-  document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
-  document.getElementById('langBtn').textContent = currentLang === 'en' ? 'عربي' : 'English';
-  document.querySelectorAll('[data-en]').forEach(el => { el.textContent = el.getAttribute('data-' + currentLang); });
-}
-applyLang();
-
-inputs.forEach((input, i) => {
-  input.addEventListener('input', (e) => {
-    if (e.target.value && i < 5) inputs[i+1].focus();
-    updateConnectBtn();
-  });
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Backspace' && !e.target.value && i > 0) inputs[i-1].focus();
-    if (e.key === 'Enter') connectBtn.click();
-  });
-  input.addEventListener('paste', (e) => {
-    e.preventDefault();
-    const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\\D/g, '').slice(0, 6);
-    paste.split('').forEach((char, j) => { if (inputs[j]) inputs[j].value = char; });
-    if (paste.length > 0) inputs[Math.min(paste.length, 5)].focus();
-    updateConnectBtn();
-  });
-});
+inputs.forEach((input, i) => { input.addEventListener('input', (e) => { if (e.target.value && i < 5) inputs[i+1].focus(); updateConnectBtn(); }); input.addEventListener('keydown', (e) => { if (e.key === 'Backspace' && !e.target.value && i > 0) inputs[i-1].focus(); if (e.key === 'Enter') connectBtn.click(); }); input.addEventListener('paste', (e) => { e.preventDefault(); const p = (e.clipboardData || window.clipboardData).getData('text').replace(/\\D/g, '').slice(0, 6); p.split('').forEach((c, j) => { if (inputs[j]) inputs[j].value = c; }); if (p.length > 0) inputs[Math.min(p.length, 5)].focus(); updateConnectBtn(); }); });
 function updateConnectBtn() { connectBtn.disabled = getCode().length !== 6; }
 function getCode() { return Array.from(inputs).map(i => i.value).join(''); }
-
 connectBtn.addEventListener('click', async () => {
-  currentCode = getCode();
-  if (currentCode.length !== 6) return;
+  currentCode = getCode(); if (currentCode.length !== 6) return;
   const pairKey = 'tsp-paired-' + currentCode;
-  if (localStorage.getItem(pairKey) === deviceId) {
-    startTracking();
-    return;
-  }
-  connectBtn.style.display = 'none';
-  document.querySelector('.code-input').style.display = 'none';
-  document.querySelector('.login-box p').style.display = 'none';
-  pairingWait.style.display = 'block';
-  try {
-    const res = await fetch(API_BASE + '/api/pair-request', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: currentCode, device_id: deviceId, device_info: navigator.userAgent })
-    });
-    const data = await res.json();
-    if (data.status === 'accepted') {
-      localStorage.setItem(pairKey, deviceId);
-      startTracking();
-      return;
-    }
-    pollPairStatus(data.id);
-  } catch (e) {
-    resetPairingUI();
-  }
+  if (localStorage.getItem(pairKey) === deviceId) { localStorage.setItem('tsp-current-code', currentCode); startTracking(); return; }
+  connectBtn.style.display = 'none'; document.querySelector('.code-input').style.display = 'none'; document.querySelector('.login-box p').style.display = 'none'; pairingWait.style.display = 'block';
+  try { const res = await fetch(API_BASE + '/api/pair-request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: currentCode, device_id: deviceId, device_info: navigator.userAgent }) }); const data = await res.json(); if (data.status === 'accepted') { localStorage.setItem(pairKey, deviceId); localStorage.setItem('tsp-current-code', currentCode); startTracking(); return; } pollPairStatus(data.id); } catch (e) { resetPairingUI(); }
 });
-
-function pollPairStatus(requestId) {
-  pairPollInterval = setInterval(async () => {
-    try {
-      const res = await fetch(API_BASE + '/api/pair-status?code=' + currentCode + '&device_id=' + deviceId);
-      const data = await res.json();
-      if (data.status === 'accepted') {
-        clearInterval(pairPollInterval);
-        localStorage.setItem('tsp-paired-' + currentCode, deviceId);
-        startTracking();
-      } else if (data.status === 'declined') {
-        clearInterval(pairPollInterval);
-        resetPairingUI();
-      }
-    } catch (e) {}
-  }, 2000);
-}
-
-document.getElementById('cancelPairBtn').addEventListener('click', () => {
-  clearInterval(pairPollInterval);
-  resetPairingUI();
-});
-
-function resetPairingUI() {
-  pairingWait.style.display = 'none';
-  connectBtn.style.display = '';
-  document.querySelector('.code-input').style.display = '';
-  document.querySelector('.login-box p').style.display = '';
-}
-
-function startTracking() {
-  loginScreen.style.display = 'none';
-  mapContainer.style.display = 'flex';
-  topBar.style.display = 'block';
-  initMap();
-  fetchLocation();
-  refreshInterval = setInterval(fetchLocation, 1000);
-  document.getElementById('status').textContent = currentLang === 'ar' ? 'متصل: ' + currentCode : 'Connected: ' + currentCode;
-  document.getElementById('status').className = 'status online';
-}
-
-document.getElementById('disconnectBtn').addEventListener('click', () => {
-  clearInterval(refreshInterval);
-  clearInterval(pairPollInterval);
-  localStorage.removeItem('tsp-paired-' + currentCode);
-  currentCode = null;
-  loginScreen.style.display = 'flex';
-  mapContainer.style.display = 'none';
-  topBar.style.display = 'none';
-  infoPanel.style.display = 'none';
-  document.getElementById('callsSection').style.display = 'none';
-  inputs.forEach(i => i.value = '');
-  inputs[0].focus();
-  resetPairingUI();
-  document.getElementById('status').textContent = currentLang === 'ar' ? 'غير متصل' : 'Not connected';
-  document.getElementById('status').className = 'status';
-});
-
-document.getElementById('refreshBtn').addEventListener('click', fetchLocation);
-
-function initMap() {
-  if (map) return;
-  map = L.map('map', { zoomControl: false }).setView([0, 0], 2);
-  L.control.zoom({ position: 'topright' }).addTo(map);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OSM &copy; CartoDB', maxZoom: 19
-  }).addTo(map);
-  trail = L.polyline([], { color: '#00e5ff', weight: 3, opacity: 0.8 }).addTo(map);
-}
-
-async function fetchLocation() {
-  if (!currentCode) return;
-  try {
-    const res = await fetch(API_BASE + '/api/get-location?code=' + currentCode);
-    if (!res.ok) return;
-    const data = await res.json();
-    updateMap(data);
-    updateCalls(data.calls || []);
-    document.getElementById('status').textContent = (currentLang === 'ar' ? 'متصل: ' : 'Connected: ') + currentCode + (currentLang === 'ar' ? ' | مباشر' : ' | Live');
-  } catch (e) {
-    document.getElementById('status').textContent = currentLang === 'ar' ? 'خطأ' : 'Error';
-  }
-}
-
-function updateMap(data) {
-  const lat = data.latitude, lng = data.longitude, pos = [lat, lng];
-  if (marker) { marker.setLatLng(pos); } else {
-    marker = L.circleMarker(pos, { radius: 10, fillColor: '#00e5ff', color: '#fff', weight: 2, fillOpacity: 0.9 }).addTo(map);
-  }
-  trail.addLatLng(pos);
-  map.setView(pos, 16);
-  infoPanel.style.display = 'block';
-  const ageSec = Math.floor((Date.now() - new Date(data.timestamp)) / 1000);
-  let ageText;
-  if (currentLang === 'ar') { ageText = ageSec < 5 ? 'الآن' : ageSec < 60 ? 'منذ ' + ageSec + ' ث' : 'منذ ' + Math.floor(ageSec/60) + ' د ' + (ageSec%60) + ' ث'; }
-  else { ageText = ageSec < 5 ? 'Just now' : ageSec < 60 ? ageSec + 's ago' : Math.floor(ageSec/60) + 'm ' + (ageSec%60) + 's ago'; }
-  document.getElementById('lastUpdate').textContent = ageText;
-  document.getElementById('lastUpdate').className = 'value' + (ageSec > 30 ? ' stale' : ageSec > 120 ? ' old' : '');
-  document.getElementById('accuracy').textContent = data.accuracy ? data.accuracy.toFixed(0) + 'm' : 'N/A';
-  document.getElementById('battery').textContent = data.battery != null ? data.battery + '%' : 'N/A';
-  document.getElementById('position').textContent = lat.toFixed(5) + ', ' + lng.toFixed(5);
-}
-
-function updateCalls(calls) {
-  const section = document.getElementById('callsSection');
-  const list = document.getElementById('callsList');
-  if (!calls || calls.length === 0) { section.style.display = 'none'; return; }
-  section.style.display = 'block';
-  list.innerHTML = '';
-  calls.forEach(call => {
-    const typeMap = { 1: 'incoming', 2: 'outgoing', 3: 'missed' };
-    const typeClass = typeMap[call.type] || 'other';
-    const name = call.name || call.number || 'Unknown';
-    const number = call.name ? call.number : '';
-    const mins = Math.floor((Date.now() - call.date) / 60000);
-    const timeStr = currentLang === 'ar' ? (mins < 1 ? 'الآن' : mins < 60 ? mins + ' د' : Math.floor(mins/60) + ' س') : (mins < 1 ? 'Now' : mins < 60 ? mins + 'm' : Math.floor(mins/60) + 'h');
-    const dur = call.duration;
-    const durStr = dur > 0 ? Math.floor(dur/60) + ':' + String(dur%60).padStart(2,'0') : '-';
-    const item = document.createElement('div');
-    item.className = 'call-item';
-    item.innerHTML = '<div class="call-type ' + typeClass + '"></div><div class="call-info"><div class="call-name">' + name + '</div>' + (number ? '<div class="call-number">' + number + '</div>' : '') + '</div><div class="call-meta"><div class="call-time">' + timeStr + '</div><div class="call-duration">' + durStr + '</div></div>';
-    list.appendChild(item);
-  });
-}
+function pollPairStatus(requestId) { pairPollInterval = setInterval(async () => { try { const res = await fetch(API_BASE + '/api/pair-status?code=' + currentCode + '&device_id=' + deviceId); const data = await res.json(); if (data.status === 'accepted') { clearInterval(pairPollInterval); localStorage.setItem('tsp-paired-' + currentCode, deviceId); localStorage.setItem('tsp-current-code', currentCode); startTracking(); } else if (data.status === 'declined') { clearInterval(pairPollInterval); resetPairingUI(); } } catch (e) {} }, 2000); }
+document.getElementById('cancelPairBtn').addEventListener('click', () => { clearInterval(pairPollInterval); resetPairingUI(); });
+function resetPairingUI() { pairingWait.style.display = 'none'; connectBtn.style.display = ''; document.querySelector('.code-input').style.display = ''; document.querySelector('.login-box p').style.display = ''; }
+function startTracking() { loginScreen.style.display = 'none'; mapContainer.style.display = 'flex'; topBar.style.display = 'block'; initMap(); lastDataTime = Date.now(); isDisconnected = false; fetchLocation(); refreshInterval = setInterval(fetchLocation, 1000); setInterval(checkDisconnected, 2000); document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live'; document.getElementById('status').className = 'status online'; }
+function checkDisconnected() { if (!currentCode || !lastDataTime) return; if ((Date.now() - lastDataTime) / 1000 > 15 && !isDisconnected) { isDisconnected = true; document.getElementById('status').textContent = 'Disconnected'; document.getElementById('status').className = 'status disconnected'; } }
+document.getElementById('disconnectBtn').addEventListener('click', () => { clearInterval(refreshInterval); clearInterval(pairPollInterval); localStorage.removeItem('tsp-paired-' + currentCode); localStorage.removeItem('tsp-current-code'); currentCode = null; lastDataTime = 0; isDisconnected = false; loginScreen.style.display = 'flex'; mapContainer.style.display = 'none'; topBar.style.display = 'none'; infoPanel.style.display = 'none'; document.getElementById('callsSection').style.display = 'none'; inputs.forEach(i => i.value = ''); inputs[0].focus(); resetPairingUI(); document.getElementById('status').textContent = 'Not connected'; document.getElementById('status').className = 'status'; });
+document.getElementById('refreshBtn').addEventListener('click', () => { fetchLocation(); });
+function initMap() { if (map) { map.invalidateSize(); return; } map = L.map('map', { zoomControl: false }).setView([0, 0], 2); L.control.zoom({ position: 'bottomright' }).addTo(map); L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: 'OSM CartoDB', maxZoom: 19 }).addTo(map); trail = L.polyline([], { color: '#00e5ff', weight: 3, opacity: 0.8 }).addTo(map); }
+async function fetchLocation() { if (!currentCode) return; try { const res = await fetch(API_BASE + '/api/get-location?code=' + currentCode); if (!res.ok) return; const data = await res.json(); if (!data.latitude) return; lastDataTime = Date.now(); if (isDisconnected) { isDisconnected = false; document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live'; document.getElementById('status').className = 'status online'; } updateMap(data); updateCalls(data.calls || []); document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live'; } catch (e) {} }
+function updateMap(data) { const lat = data.latitude, lng = data.longitude, pos = [lat, lng]; if (marker) { marker.setLatLng(pos); } else { marker = L.circleMarker(pos, { radius: 10, fillColor: '#00e5ff', color: '#fff', weight: 2, fillOpacity: 0.9 }).addTo(map); } trail.addLatLng(pos); map.setView(pos, 16); infoPanel.style.display = 'block'; const ageSec = Math.floor((Date.now() - new Date(data.timestamp)) / 1000); document.getElementById('lastUpdate').textContent = ageSec < 5 ? 'Just now' : ageSec < 60 ? ageSec + 's ago' : Math.floor(ageSec/60) + 'm ' + (ageSec%60) + 's ago'; document.getElementById('lastUpdate').className = 'value' + (ageSec > 30 ? ' stale' : ageSec > 120 ? ' old' : ''); document.getElementById('accuracy').textContent = data.accuracy ? data.accuracy.toFixed(0) + 'm' : 'N/A'; document.getElementById('battery').textContent = data.battery != null ? data.battery + '%' : 'N/A'; document.getElementById('position').textContent = lat.toFixed(5) + ', ' + lng.toFixed(5); }
+function formatDuration(s) { if (s < 60) return s + 's'; if (s < 3600) return Math.floor(s/60) + 'm ' + (s%60) + 's'; return Math.floor(s/3600) + 'h ' + Math.floor((s%3600)/60) + 'm'; }
+function formatCallTime(ts) { var d = Date.now() - ts; var m = Math.floor(d/60000); if (m < 1) return 'Just now'; if (m < 60) return m + 'm ago'; var h = Math.floor(m/60); if (h < 24) return h + 'h ago'; return Math.floor(h/24) + 'd ago'; }
+function getCallTypeLabel(t) { return {1:'Incoming',2:'Outgoing',3:'Missed',4:'Voicemail',5:'Rejected',6:'Blocked'}[t] || 'Other'; }
+function getCallTypeArrow(t) { return {1:'\u2199',2:'\u2197',3:'\u2716'}[t] || '\u2022'; }
+function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function updateCalls(calls) { var sec = document.getElementById('callsSection'); var list = document.getElementById('callsList'); if (!calls || calls.length === 0) { sec.style.display = 'none'; return; } sec.style.display = 'block'; list.innerHTML = ''; calls.forEach(function(call) { var tc = {1:'incoming',2:'outgoing',3:'missed'}[call.type] || 'other'; var arrow = getCallTypeArrow(call.type); var name = call.name || 'Unknown'; var showNum = call.number && call.name; var durStr = call.duration > 0 ? formatDuration(call.duration) : 'Missed'; var timeStr = formatCallTime(call.date); var item = document.createElement('div'); item.className = 'call-item'; item.innerHTML = '<div class="call-type-icon ' + tc + '">' + arrow + '</div><div class="call-info"><div class="call-name">' + escapeHtml(name) + '</div>' + (showNum ? '<div class="call-number">' + escapeHtml(call.number) + '</div>' : '') + '</div><div class="call-meta"><div class="call-time">' + timeStr + '</div><div class="call-duration">' + durStr + '</div></div>'; list.appendChild(item); }); }
+(function autoReconnect() { var sc = localStorage.getItem('tsp-current-code'); var pk = 'tsp-paired-' + sc; if (sc && sc.length === 6 && localStorage.getItem(pk) === deviceId) { currentCode = sc; inputs.forEach((inp, i) => { inp.value = sc[i] || ''; }); updateConnectBtn(); startTracking(); } })();
 <\/script>
 </body>
 </html>`;
