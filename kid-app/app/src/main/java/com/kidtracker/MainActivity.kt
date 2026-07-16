@@ -4,12 +4,12 @@ import android.Manifest
 import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.Gravity
 import android.widget.Button
 import android.widget.LinearLayout
@@ -38,15 +38,6 @@ class MainActivity : AppCompatActivity() {
     private var dialogShowing = false
     private val processedIds = mutableSetOf<String>()
 
-    override fun attachBaseContext(newBase: android.content.Context) {
-        val prefs = newBase.getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        val lang = prefs.getString("app_lang", "en") ?: "en"
-        val locale = Locale(lang)
-        val config = Configuration(newBase.resources.configuration)
-        config.setLocale(locale)
-        super.attachBaseContext(newBase.createConfigurationContext(config))
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -58,6 +49,11 @@ class MainActivity : AppCompatActivity() {
         binding.langToggle.setOnClickListener {
             val newLang = if (currentLang == "en") "ar" else "en"
             prefs.edit().putString("app_lang", newLang).apply()
+            val locale = Locale(newLang)
+            val config = resources.configuration
+            config.setLocale(locale)
+            @Suppress("DEPRECATION")
+            resources.updateConfiguration(config, resources.displayMetrics)
             recreate()
         }
 
@@ -244,13 +240,17 @@ class MainActivity : AppCompatActivity() {
                 val conn = url.openConnection() as HttpURLConnection
                 conn.requestMethod = "POST"
                 conn.setRequestProperty("Content-Type", "application/json")
-                conn.connectTimeout = 5000
+                conn.connectTimeout = 10000
+                conn.readTimeout = 10000
                 conn.doOutput = true
                 val json = JSONObject().apply { put("id", id); put("code", code) }
                 conn.outputStream.write(json.toString().toByteArray())
-                conn.responseCode
+                val responseCode = conn.responseCode
+                Log.d("TrackerID", "Pair $action response: $responseCode")
                 conn.disconnect()
-            } catch (e: Exception) {}
+            } catch (e: Exception) {
+                Log.e("TrackerID", "Pair $action failed", e)
+            }
         }.start()
     }
 
