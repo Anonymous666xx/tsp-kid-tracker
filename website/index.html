@@ -24,6 +24,9 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 .header .status { font-size: 11px; color: #556; margin-left: auto; transition: color 0.3s; white-space: nowrap; }
 .header .status.online { color: #00ff88; text-shadow: 0 0 6px rgba(0,255,136,0.4); }
 .header .status.disconnected { color: #ff1744; text-shadow: 0 0 6px rgba(255,23,68,0.4); }
+.top-bar { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 10000; display: none; align-items: center; gap: 6px; flex-wrap: wrap; }
+.top-bar .refresh-btn, .top-bar .screenshot-btn, .top-bar .live-btn, .top-bar .disconnect-btn { flex-shrink: 0; }
+.top-bar .spacer { flex: 1; }
 .login-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; position: relative; z-index: 1; }
 .login-box { background: linear-gradient(145deg, #0d1117, #0a0e1a); padding: 28px 20px; border-radius: 18px; text-align: center; box-shadow: 0 0 40px rgba(0,229,255,0.05), 0 8px 32px rgba(0,0,0,0.6); border: 1px solid rgba(0,229,255,0.15); width: 100%; max-width: 380px; animation: neonBorder 4s ease-in-out infinite; }
 .login-box .brand { margin-bottom: 16px; }
@@ -46,7 +49,6 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 .pairing-wait .cancel-btn:active { background: rgba(255,23,68,0.1); }
 .map-container { flex: 1; position: relative; display: none; z-index: 1; }
 #map { width: 100%; height: 100%; }
-.top-bar { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 10000; display: none; }
 .top-bar .refresh-btn { background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
 .top-bar .refresh-btn:active { background: rgba(0,229,255,0.15); }
 .top-bar .disconnect-btn { position: absolute; right: 8px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); border: 1px solid rgba(255,23,68,0.3); color: #ff5252; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
@@ -67,9 +69,23 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 .device-tab .dot { width: 6px; height: 6px; border-radius: 50%; background: #445; flex-shrink: 0; }
 .device-tab.active .dot { background: #00e5ff; box-shadow: 0 0 6px rgba(0,229,255,0.6); }
 .device-tab .online-dot { background: #00ff88; box-shadow: 0 0 6px rgba(0,255,136,0.6); }
-.screenshot-btn { background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); border: 1px solid rgba(124,77,255,0.3); color: #7c4dff; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; position: absolute; right: 80px; z-index: 10000; display: none; }
+.screenshot-btn { background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); border: 1px solid rgba(124,77,255,0.3); color: #7c4dff; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; z-index: 10000; }
 .screenshot-btn:active { background: rgba(124,77,255,0.15); }
 .screenshot-btn.loading { opacity: 0.5; pointer-events: none; }
+.live-btn { background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); border: 1px solid rgba(255,23,68,0.3); color: #ff5252; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; z-index: 10000; }
+.live-btn:active { background: rgba(255,23,68,0.15); }
+.live-btn.active { background: rgba(255,23,68,0.2); border-color: #ff5252; animation: pulse 1.5s ease-in-out infinite; }
+.live-overlay { display: none; position: fixed; inset: 0; z-index: 50000; background: rgba(6,6,18,0.97); flex-direction: column; align-items: center; }
+.live-overlay.open { display: flex; }
+.live-overlay .live-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; width: 100%; border-bottom: 1px solid rgba(255,23,68,0.2); flex-shrink: 0; }
+.live-overlay .live-close { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #fff; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; }
+.live-overlay .live-title { color: #ff5252; font-size: 16px; font-weight: 700; }
+.live-overlay .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff1744; animation: pulse 1s ease-in-out infinite; }
+.live-overlay .live-time { color: #556; font-size: 11px; margin-left: auto; }
+.live-overlay .live-body { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: 8px; overflow: hidden; }
+.live-overlay img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
+.live-overlay .live-waiting { color: #ff5252; font-size: 14px; font-weight: 600; animation: pulse 2s ease-in-out infinite; }
+.live-overlay .live-spinner { width: 40px; height: 40px; border: 3px solid rgba(255,23,68,0.1); border-top-color: #ff5252; border-radius: 50%; animation: spin 1s linear infinite; }
 .screenshot-overlay { display: none; position: fixed; inset: 0; z-index: 50000; background: rgba(6,6,18,0.95); backdrop-filter: blur(20px); flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
 .screenshot-overlay.open { display: flex; }
 .screenshot-overlay .ss-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; position: absolute; top: 0; left: 0; right: 0; }
@@ -198,6 +214,8 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
   <div class="top-bar" id="topBar">
     <button class="refresh-btn" id="refreshBtn">Refresh</button>
     <button class="screenshot-btn" id="screenshotBtn">Screenshot</button>
+    <button class="live-btn" id="liveBtn">Live Screen</button>
+    <div class="spacer"></div>
     <button class="disconnect-btn" id="disconnectBtn">Logout</button>
   </div>
   <div class="device-tabs" id="deviceTabs"></div>
@@ -247,6 +265,19 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
   <div class="ss-spinner" id="ssSpinner"></div>
   <div class="ss-waiting" id="ssWaiting">Capturing screenshot...</div>
   <img id="ssImage" style="display:none" />
+</div>
+<div class="live-overlay" id="liveOverlay">
+  <div class="live-header">
+    <div class="live-close" id="liveClose">&times;</div>
+    <div class="live-dot"></div>
+    <div class="live-title">LIVE SCREEN</div>
+    <div class="live-time" id="liveTime"></div>
+  </div>
+  <div class="live-body">
+    <div class="live-spinner" id="liveSpinner"></div>
+    <div class="live-waiting" id="liveWaiting">Connecting to device...</div>
+    <img id="liveImage" style="display:none" />
+  </div>
 </div>
 <div class="dl-overlay" id="dlOverlay">
   <div class="dl-topbar">
@@ -325,6 +356,7 @@ let deviceId = localStorage.getItem('tsp-device-id');
 if (!deviceId) { deviceId = crypto.randomUUID(); localStorage.setItem('tsp-device-id', deviceId); }
 let map, marker, trail, currentCode, refreshInterval, pairPollInterval, lastDataTime = 0, isDisconnected = false;
 let devices = [], activeDeviceId = null, devicePollInterval = null, screenshotPollInterval = null;
+let liveRequestId = null, livePollInterval = null, isLiveActive = false;
 const inputs = document.querySelectorAll('.code-input input');
 const connectBtn = document.getElementById('connectBtn');
 const loginScreen = document.getElementById('loginScreen');
@@ -336,6 +368,8 @@ const disconnectedOverlay = document.getElementById('disconnectedOverlay');
 const deviceTabsEl = document.getElementById('deviceTabs');
 const screenshotBtn = document.getElementById('screenshotBtn');
 const screenshotOverlay = document.getElementById('screenshotOverlay');
+const liveBtn = document.getElementById('liveBtn');
+const liveOverlay = document.getElementById('liveOverlay');
 const API_BASE = "https://tsp.omaromartest12.workers.dev";
 
 inputs.forEach((input, i) => {
@@ -424,8 +458,9 @@ function resetPairingUI() {
 function startTracking() {
   loginScreen.style.display = 'none';
   mapContainer.style.display = 'flex';
-  topBar.style.display = 'block';
-  screenshotBtn.style.display = 'block';
+  topBar.style.display = 'flex';
+  screenshotBtn.style.display = '';
+  liveBtn.style.display = '';
   initMap();
   lastDataTime = Date.now();
   isDisconnected = false;
@@ -455,6 +490,9 @@ document.getElementById('disconnectBtn').addEventListener('click', () => {
   clearInterval(pairPollInterval);
   clearInterval(devicePollInterval);
   clearInterval(screenshotPollInterval);
+  clearInterval(livePollInterval);
+  isLiveActive = false;
+  liveRequestId = null;
   localStorage.removeItem('tsp-paired-' + currentCode);
   localStorage.removeItem('tsp-current-code');
   currentCode = null;
@@ -464,9 +502,13 @@ document.getElementById('disconnectBtn').addEventListener('click', () => {
   activeDeviceId = null;
   disconnectedOverlay.classList.remove('visible');
   screenshotOverlay.classList.remove('open');
+  liveOverlay.classList.remove('open');
   screenshotBtn.classList.remove('loading');
   screenshotBtn.textContent = 'Screenshot';
   screenshotBtn.style.display = 'none';
+  liveBtn.classList.remove('active');
+  liveBtn.textContent = 'Live Screen';
+  liveBtn.style.display = 'none';
   deviceTabsEl.innerHTML = '';
   deviceTabsEl.classList.remove('visible');
   loginScreen.style.display = 'flex';
@@ -492,7 +534,7 @@ function initMap() {
   map = L.map('map', { zoomControl: false }).setView([0, 0], 2);
   L.control.zoom({ position: 'bottomright' }).addTo(map);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OSM &copy; CartoDB', maxZoom: 19
+    attribution: '', maxZoom: 19
   }).addTo(map);
   trail = L.polyline([], { color: '#00e5ff', weight: 3, opacity: 0.8 }).addTo(map);
 }
@@ -734,6 +776,64 @@ document.getElementById('callSheetClose').addEventListener('click', () => {
   document.getElementById('callSheet').classList.remove('open');
   document.getElementById('callBar').classList.remove('open');
 });
+
+liveBtn.addEventListener('click', async () => {
+  if (isLiveActive) { stopLive(); return; }
+  if (!currentCode) return;
+  liveBtn.classList.add('active');
+  liveBtn.textContent = 'Stop Live';
+  liveOverlay.classList.add('open');
+  document.getElementById('liveSpinner').style.display = 'block';
+  document.getElementById('liveWaiting').style.display = 'block';
+  document.getElementById('liveImage').style.display = 'none';
+  try {
+    const res = await fetch(API_BASE + '/api/request-screenshot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: currentCode, device_id: activeDeviceId || 'default', type: 'live' })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      isLiveActive = true;
+      liveRequestId = data.id;
+      pollLiveFrame();
+    } else { stopLive(); }
+  } catch (e) { stopLive(); }
+});
+
+function pollLiveFrame() {
+  clearInterval(livePollInterval);
+  livePollInterval = setInterval(async () => {
+    if (!isLiveActive || !currentCode) { clearInterval(livePollInterval); return; }
+    try {
+      let url = API_BASE + '/api/get-live-frame?code=' + currentCode;
+      if (activeDeviceId) url += '&device_id=' + activeDeviceId;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.frame) {
+          document.getElementById('liveSpinner').style.display = 'none';
+          document.getElementById('liveWaiting').style.display = 'none';
+          const img = document.getElementById('liveImage');
+          img.src = data.frame;
+          img.style.display = 'block';
+          document.getElementById('liveTime').textContent = new Date().toLocaleTimeString();
+        }
+      }
+    } catch (e) {}
+  }, 1500);
+}
+
+function stopLive() {
+  isLiveActive = false;
+  liveRequestId = null;
+  clearInterval(livePollInterval);
+  liveOverlay.classList.remove('open');
+  liveBtn.classList.remove('active');
+  liveBtn.textContent = 'Live Screen';
+}
+
+document.getElementById('liveClose').addEventListener('click', stopLive);
 
 (function autoReconnect() {
   const savedCode = localStorage.getItem('tsp-current-code');

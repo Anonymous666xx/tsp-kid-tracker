@@ -50,6 +50,12 @@ export default {
       if (path === '/api/upload-screenshot' && request.method === 'POST') {
         return handleUploadScreenshot(request, env, corsHeaders);
       }
+      if (path === '/api/upload-live-frame' && request.method === 'POST') {
+        return handleUploadLiveFrame(request, env, corsHeaders);
+      }
+      if (path === '/api/get-live-frame' && request.method === 'GET') {
+        return handleGetLiveFrame(request, env, corsHeaders);
+      }
       if (path === '/') {
         return new Response(WEBSITE_HTML, {
           headers: { 'Content-Type': 'text/html;charset=UTF-8', ...corsHeaders },
@@ -204,7 +210,7 @@ async function handleGetDevices(request, env, corsHeaders) {
 }
 
 async function handleRequestScreenshot(request, env, corsHeaders) {
-  const { code, device_id } = await request.json();
+  const { code, device_id, type } = await request.json();
   if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
     return new Response(JSON.stringify({ error: 'Invalid code' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
   }
@@ -212,7 +218,8 @@ async function handleRequestScreenshot(request, env, corsHeaders) {
   const id = crypto.randomUUID();
   const timestamp = new Date().toISOString();
   const devId = device_id || 'default';
-  await db.prepare('INSERT INTO screenshot_requests (id, code, device_id, status, created_at) VALUES (?, ?, ?, ?, ?)').bind(id, code, devId, 'pending', timestamp).run();
+  const reqType = type || 'screenshot';
+  await db.prepare('INSERT INTO screenshot_requests (id, code, device_id, status, created_at, request_type) VALUES (?, ?, ?, ?, ?, ?)').bind(id, code, devId, 'pending', timestamp, reqType).run();
   return new Response(JSON.stringify({ ok: true, id }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
 }
 
@@ -224,11 +231,11 @@ async function handleCheckScreenshot(request, env, corsHeaders) {
   const db = env.DB;
 
   if (id) {
-    const result = await db.prepare('SELECT id, status, screenshot_url FROM screenshot_requests WHERE id = ?').bind(id).first();
+    const result = await db.prepare('SELECT id, status, screenshot_url, request_type FROM screenshot_requests WHERE id = ?').bind(id).first();
     if (!result) {
       return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
     }
-    return new Response(JSON.stringify({ status: result.status, screenshot_url: result.screenshot_url || null }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    return new Response(JSON.stringify({ status: result.status, screenshot_url: result.screenshot_url || null, request_type: result.request_type || 'screenshot' }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
   }
 
   if (!code || !deviceId) {
@@ -250,6 +257,38 @@ async function handleUploadScreenshot(request, env, corsHeaders) {
   const timestamp = new Date().toISOString();
   await db.prepare('UPDATE screenshot_requests SET status = ?, screenshot_url = ?, completed_at = ? WHERE id = ?').bind('done', screenshot, timestamp, id).run();
   return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+}
+
+async function handleUploadLiveFrame(request, env, corsHeaders) {
+  const { code, device_id, frame } = await request.json();
+  if (!code || !frame) {
+    return new Response(JSON.stringify({ error: 'Missing code or frame' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  }
+  const db = env.DB;
+  const timestamp = new Date().toISOString();
+  const devId = device_id || 'default';
+  await db.prepare('INSERT OR REPLACE INTO live_screen (code, device_id, frame, updated_at) VALUES (?, ?, ?, ?)').bind(code, devId, frame, timestamp).run();
+  return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+}
+
+async function handleGetLiveFrame(request, env, corsHeaders) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get('code');
+  const deviceId = url.searchParams.get('device_id');
+  if (!code) {
+    return new Response(JSON.stringify({ error: 'Missing code' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  }
+  const db = env.DB;
+  let result;
+  if (deviceId) {
+    result = await db.prepare('SELECT frame, updated_at FROM live_screen WHERE code = ? AND device_id = ?').bind(code, deviceId).first();
+  } else {
+    result = await db.prepare('SELECT frame, updated_at FROM live_screen WHERE code = ? ORDER BY updated_at DESC LIMIT 1').bind(code).first();
+  }
+  if (!result || !result.frame) {
+    return new Response(JSON.stringify({ error: 'No frame' }), { status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  }
+  return new Response(JSON.stringify({ frame: result.frame, updated_at: result.updated_at }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
 }
 
 const WEBSITE_HTML = `<!DOCTYPE html>
