@@ -23,6 +23,21 @@ export default {
       if (path === '/api/get-history' && request.method === 'GET') {
         return handleGetHistory(request, env, corsHeaders);
       }
+      if (path === '/api/pair-request' && request.method === 'POST') {
+        return handlePairRequest(request, env, corsHeaders);
+      }
+      if (path === '/api/pair-status' && request.method === 'GET') {
+        return handlePairStatus(request, env, corsHeaders);
+      }
+      if (path === '/api/pair-accept' && request.method === 'POST') {
+        return handlePairAccept(request, env, corsHeaders);
+      }
+      if (path === '/api/pair-decline' && request.method === 'POST') {
+        return handlePairDecline(request, env, corsHeaders);
+      }
+      if (path === '/api/pending-pairs' && request.method === 'GET') {
+        return handlePendingPairs(request, env, corsHeaders);
+      }
       if (path === '/') {
         return new Response(WEBSITE_HTML, {
           headers: { 'Content-Type': 'text/html;charset=UTF-8', ...corsHeaders },
@@ -41,120 +56,125 @@ export default {
     const db = env.DB;
     await db.prepare("DELETE FROM locations WHERE timestamp < datetime('now', '-24 hours')").run();
     await db.prepare("DELETE FROM call_logs WHERE updated_at < datetime('now', '-24 hours')").run();
+    await db.prepare("DELETE FROM pair_requests WHERE created_at < datetime('now', '-24 hours')").run();
   }
 };
 
 async function handleUpdateLocation(request, env, corsHeaders) {
   const { code, latitude, longitude, accuracy, battery, calls } = await request.json();
-
   if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
-    return new Response(JSON.stringify({ error: 'Invalid 6-digit code' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
+    return new Response(JSON.stringify({ error: 'Invalid code' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
   }
-
   if (latitude == null || longitude == null) {
-    return new Response(JSON.stringify({ error: 'Missing coordinates' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
+    return new Response(JSON.stringify({ error: 'Missing coordinates' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
   }
-
   const db = env.DB;
   const id = crypto.randomUUID();
   const timestamp = new Date().toISOString();
-
-  await db.prepare(
-    'INSERT INTO locations (id, code, latitude, longitude, accuracy, battery, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).bind(id, code, latitude, longitude, accuracy || null, battery || null, timestamp).run();
-
-  await db.prepare(
-    'DELETE FROM locations WHERE id NOT IN (SELECT id FROM locations WHERE code = ? ORDER BY timestamp DESC LIMIT 500)'
-  ).bind(code).run();
-
+  await db.prepare('INSERT INTO locations (id, code, latitude, longitude, accuracy, battery, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(id, code, latitude, longitude, accuracy || null, battery || null, timestamp).run();
+  await db.prepare('DELETE FROM locations WHERE id NOT IN (SELECT id FROM locations WHERE code = ? ORDER BY timestamp DESC LIMIT 500)').bind(code).run();
   if (calls && Array.isArray(calls) && calls.length > 0) {
-    const callsJson = JSON.stringify(calls);
-    await db.prepare(
-      'INSERT OR REPLACE INTO call_logs (code, calls_json, updated_at) VALUES (?, ?, ?)'
-    ).bind(code, callsJson, timestamp).run();
+    await db.prepare('INSERT OR REPLACE INTO call_logs (code, calls_json, updated_at) VALUES (?, ?, ?)').bind(code, JSON.stringify(calls), timestamp).run();
   }
-
-  return new Response(JSON.stringify({ ok: true, timestamp }), {
-    headers: { 'Content-Type': 'application/json', ...corsHeaders },
-  });
+  return new Response(JSON.stringify({ ok: true, timestamp }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
 }
 
 async function handleGetLocation(request, env, corsHeaders) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
-
   if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
-    return new Response(JSON.stringify({ error: 'Invalid code' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
+    return new Response(JSON.stringify({ error: 'Invalid code' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
   }
-
   const db = env.DB;
-  const result = await db.prepare(
-    'SELECT * FROM locations WHERE code = ? ORDER BY timestamp DESC LIMIT 1'
-  ).bind(code).first();
-
+  const result = await db.prepare('SELECT * FROM locations WHERE code = ? ORDER BY timestamp DESC LIMIT 1').bind(code).first();
   if (!result) {
-    return new Response(JSON.stringify({ error: 'No location found for this code' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
+    return new Response(JSON.stringify({ error: 'No location found' }), { status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
   }
-
-  const callsResult = await db.prepare(
-    'SELECT calls_json FROM call_logs WHERE code = ?'
-  ).bind(code).first();
-
+  const callsResult = await db.prepare('SELECT calls_json FROM call_logs WHERE code = ?').bind(code).first();
   const response = { ...result };
-  if (callsResult && callsResult.calls_json) {
-    try {
-      response.calls = JSON.parse(callsResult.calls_json);
-    } catch (e) {
-      response.calls = [];
-    }
-  } else {
-    response.calls = [];
-  }
-
-  return new Response(JSON.stringify(response), {
-    headers: { 'Content-Type': 'application/json', ...corsHeaders },
-  });
+  response.calls = (callsResult && callsResult.calls_json) ? JSON.parse(callsResult.calls_json) : [];
+  return new Response(JSON.stringify(response), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
 }
 
 async function handleGetHistory(request, env, corsHeaders) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
   const limit = parseInt(url.searchParams.get('limit') || '50');
-
   if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
-    return new Response(JSON.stringify({ error: 'Invalid code' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
+    return new Response(JSON.stringify({ error: 'Invalid code' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
   }
-
   const db = env.DB;
-  const results = await db.prepare(
-    'SELECT * FROM locations WHERE code = ? ORDER BY timestamp DESC LIMIT ?'
-  ).bind(code, Math.min(limit, 200)).all();
+  const results = await db.prepare('SELECT * FROM locations WHERE code = ? ORDER BY timestamp DESC LIMIT ?').bind(code, Math.min(limit, 200)).all();
+  return new Response(JSON.stringify(results.results), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+}
 
-  return new Response(JSON.stringify(results.results), {
-    headers: { 'Content-Type': 'application/json', ...corsHeaders },
-  });
+async function handlePairRequest(request, env, corsHeaders) {
+  const { code, device_id, device_info } = await request.json();
+  if (!code || code.length !== 6 || !/^\d{6}$/.test(code) || !device_id) {
+    return new Response(JSON.stringify({ error: 'Invalid code or device_id' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  }
+  const db = env.DB;
+  const existing = await db.prepare('SELECT id, status FROM pair_requests WHERE code = ? AND device_id = ? ORDER BY created_at DESC LIMIT 1').bind(code, device_id).first();
+  if (existing && existing.status === 'accepted') {
+    return new Response(JSON.stringify({ status: 'accepted', id: existing.id }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  }
+  if (existing && existing.status === 'pending') {
+    return new Response(JSON.stringify({ status: 'pending', id: existing.id }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  }
+  const id = crypto.randomUUID();
+  const timestamp = new Date().toISOString();
+  await db.prepare('INSERT INTO pair_requests (id, code, device_id, device_info, status, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(id, code, device_id, device_info || '', 'pending', timestamp).run();
+  return new Response(JSON.stringify({ status: 'pending', id }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+}
+
+async function handlePairStatus(request, env, corsHeaders) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get('code');
+  const deviceId = url.searchParams.get('device_id');
+  if (!code || !deviceId) {
+    return new Response(JSON.stringify({ error: 'Missing code or device_id' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  }
+  const db = env.DB;
+  const result = await db.prepare('SELECT status FROM pair_requests WHERE code = ? AND device_id = ? ORDER BY created_at DESC LIMIT 1').bind(code, deviceId).first();
+  return new Response(JSON.stringify({ status: result ? result.status : 'none' }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+}
+
+async function handlePairAccept(request, env, corsHeaders) {
+  const { id, code } = await request.json();
+  if (!id) {
+    return new Response(JSON.stringify({ error: 'Missing id' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  }
+  const db = env.DB;
+  await db.prepare('UPDATE pair_requests SET status = ? WHERE id = ?').bind('accepted', id).run();
+  return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+}
+
+async function handlePairDecline(request, env, corsHeaders) {
+  const { id } = await request.json();
+  if (!id) {
+    return new Response(JSON.stringify({ error: 'Missing id' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  }
+  const db = env.DB;
+  await db.prepare('UPDATE pair_requests SET status = ? WHERE id = ?').bind('declined', id).run();
+  return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+}
+
+async function handlePendingPairs(request, env, corsHeaders) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get('code');
+  if (!code || code.length !== 6) {
+    return new Response(JSON.stringify({ error: 'Invalid code' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  }
+  const db = env.DB;
+  const results = await db.prepare('SELECT id, device_id, device_info, status, created_at FROM pair_requests WHERE code = ? AND status = ? ORDER BY created_at DESC').bind(code, 'pending').all();
+  return new Response(JSON.stringify(results.results), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
 }
 
 const WEBSITE_HTML = `<!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>TSP - Tracker System Pro</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>
@@ -163,72 +183,88 @@ const WEBSITE_HTML = `<!DOCTYPE html>
 @keyframes neonBorder { 0%,100% { box-shadow: 0 0 5px rgba(0,229,255,0.3); } 50% { box-shadow: 0 0 15px rgba(0,229,255,0.5); } }
 @keyframes bgGlow { 0%,100% { opacity: 0.03; } 50% { opacity: 0.07; } }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #060612; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-body::before { content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse at 30% 20%, rgba(0,229,255,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(124,77,255,0.04) 0%, transparent 50%); animation: bgGlow 8s ease-in-out infinite; pointer-events: none; z-index: 0; }
-.header { background: linear-gradient(135deg, #0a0e1a, #0d1b2a); padding: 12px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(0,229,255,0.2); flex-shrink: 0; position: relative; z-index: 1; }
-.header h1 { font-size: 18px; color: #00e5ff; font-weight: 800; letter-spacing: 2px; animation: neonPulse 3s ease-in-out infinite; }
-.header .made-by { font-size: 9px; color: rgba(124,77,255,0.7); position: absolute; top: 4px; letter-spacing: 0.5px; }
-.header .status { font-size: 12px; color: #556; margin-left: auto; margin-right: 60px; transition: color 0.3s; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { height: 100%; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #060612; color: #e0e0e0; height: 100%; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; -webkit-font-smoothing: antialiased; }
+body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 30% 20%, rgba(0,229,255,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(124,77,255,0.04) 0%, transparent 50%); animation: bgGlow 8s ease-in-out infinite; pointer-events: none; z-index: 0; }
+.header { background: linear-gradient(135deg, #0a0e1a, #0d1b2a); padding: 10px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(0,229,255,0.2); flex-shrink: 0; position: relative; z-index: 1; min-height: 44px; }
+.header h1 { font-size: 17px; color: #00e5ff; font-weight: 800; letter-spacing: 2px; animation: neonPulse 3s ease-in-out infinite; }
+.header .status { font-size: 11px; color: #556; margin-left: auto; margin-right: 50px; transition: color 0.3s; white-space: nowrap; }
 .header .status.online { color: #00ff88; text-shadow: 0 0 6px rgba(0,255,136,0.4); }
-.lang-btn { background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 6px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; position: absolute; right: 20px; flex-shrink: 0; transition: all 0.3s; }
-.lang-btn:hover { background: rgba(0,229,255,0.15); box-shadow: 0 0 12px rgba(0,229,255,0.3); }
+.lang-btn { background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 5px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 600; position: absolute; right: 12px; flex-shrink: 0; transition: all 0.3s; }
+.lang-btn:hover { background: rgba(0,229,255,0.15); }
 .login-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; position: relative; z-index: 1; }
-.login-box { background: linear-gradient(145deg, #0d1117, #0a0e1a); padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 0 40px rgba(0,229,255,0.05), 0 8px 32px rgba(0,0,0,0.6); border: 1px solid rgba(0,229,255,0.15); width: 100%; max-width: 420px; animation: neonBorder 4s ease-in-out infinite; }
-.login-box h2 { margin-bottom: 6px; font-size: 26px; color: #00e5ff; font-weight: 800; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0,229,255,0.3); }
-.login-box .subtitle { color: rgba(124,77,255,0.7); font-size: 11px; margin-bottom: 8px; letter-spacing: 2px; font-weight: 600; }
-.login-box p { color: #667; margin-bottom: 24px; font-size: 14px; }
-.code-input { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; }
-.code-input input { width: 13%; aspect-ratio: 5/6; max-width: 56px; min-width: 38px; text-align: center; font-size: clamp(20px, 5vw, 28px); font-weight: bold; background: #080c14; border: 1.5px solid rgba(0,229,255,0.2); border-radius: 12px; color: #00e5ff; outline: none; transition: all 0.3s; }
-.code-input input:focus { border-color: #00e5ff; box-shadow: 0 0 15px rgba(0,229,255,0.4); }
-.connect-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #00e5ff, #7c4dff); border: none; border-radius: 12px; color: #060612; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; letter-spacing: 1px; text-transform: uppercase; }
-.connect-btn:hover { transform: translateY(-2px); box-shadow: 0 0 20px rgba(0,229,255,0.4); }
+.login-box { background: linear-gradient(145deg, #0d1117, #0a0e1a); padding: 28px 20px; border-radius: 18px; text-align: center; box-shadow: 0 0 40px rgba(0,229,255,0.05), 0 8px 32px rgba(0,0,0,0.6); border: 1px solid rgba(0,229,255,0.15); width: 100%; max-width: 380px; animation: neonBorder 4s ease-in-out infinite; }
+.login-box .brand { margin-bottom: 16px; }
+.login-box h2 { font-size: 22px; color: #00e5ff; font-weight: 800; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0,229,255,0.3); margin-bottom: 4px; }
+.login-box .subtitle { color: rgba(124,77,255,0.7); font-size: 10px; letter-spacing: 2px; font-weight: 600; margin-bottom: 4px; }
+.login-box .made-by { color: #334455; font-size: 9px; letter-spacing: 1px; }
+.login-box p { color: #667; margin-bottom: 20px; font-size: 13px; }
+.code-input { display: flex; gap: 6px; justify-content: center; margin-bottom: 20px; }
+.code-input input { width: 14%; aspect-ratio: 5/6; max-width: 48px; min-width: 32px; text-align: center; font-size: clamp(18px, 5vw, 26px); font-weight: bold; background: #080c14; border: 1.5px solid rgba(0,229,255,0.2); border-radius: 10px; color: #00e5ff; outline: none; transition: all 0.3s; }
+.code-input input:focus { border-color: #00e5ff; box-shadow: 0 0 12px rgba(0,229,255,0.4); }
+.connect-btn { width: 100%; padding: 13px; background: linear-gradient(135deg, #00e5ff, #7c4dff); border: none; border-radius: 10px; color: #060612; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.3s; letter-spacing: 1px; text-transform: uppercase; }
+.connect-btn:hover { transform: translateY(-1px); box-shadow: 0 0 20px rgba(0,229,255,0.4); }
 .connect-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
+.pairing-wait { display: none; text-align: center; padding: 20px 0; }
+.pairing-wait .spinner { width: 40px; height: 40px; border: 3px solid rgba(0,229,255,0.1); border-top-color: #00e5ff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 12px; }
+.pairing-wait .text { color: #00e5ff; font-size: 14px; font-weight: 600; animation: pulse 2s ease-in-out infinite; }
+.pairing-wait .sub { color: #556; font-size: 12px; margin-top: 6px; }
+.pairing-wait .cancel-btn { margin-top: 16px; padding: 8px 20px; background: transparent; border: 1px solid rgba(255,23,68,0.3); color: #ff5252; border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.3s; }
+.pairing-wait .cancel-btn:hover { background: rgba(255,23,68,0.1); }
 .map-container { flex: 1; position: relative; display: none; z-index: 1; }
 #map { width: 100%; height: 100%; }
-.info-panel { position: absolute; bottom: 20px; left: 20px; right: 20px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(0,229,255,0.15); z-index: 1000; display: none; max-height: 45vh; overflow-y: auto; }
-.info-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px; gap: 8px; }
+.info-panel { position: absolute; bottom: 16px; left: 16px; right: 16px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(0,229,255,0.15); z-index: 1000; display: none; max-height: 40vh; overflow-y: auto; }
+.info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; gap: 6px; }
 .info-row .label { color: #556; flex-shrink: 0; }
 .info-row .value { font-weight: 600; text-align: end; word-break: break-all; color: #c0c0c0; }
 .info-row .value.stale { color: #ff9100; }
 .info-row .value.old { color: #ff1744; }
-.calls-section { margin-top: 12px; border-top: 1px solid rgba(0,229,255,0.1); padding-top: 12px; }
-.calls-title { font-size: 11px; color: #7c4dff; letter-spacing: 2px; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; }
-.call-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); animation: slideUp 0.3s ease-out; }
-.call-type { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-.call-type.incoming { background: #00ff88; box-shadow: 0 0 6px rgba(0,255,136,0.5); }
-.call-type.outgoing { background: #00e5ff; box-shadow: 0 0 6px rgba(0,229,255,0.5); }
-.call-type.missed { background: #ff1744; box-shadow: 0 0 6px rgba(255,23,68,0.5); }
+.calls-section { margin-top: 10px; border-top: 1px solid rgba(0,229,255,0.1); padding-top: 10px; }
+.calls-title { font-size: 10px; color: #7c4dff; letter-spacing: 2px; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
+.call-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.03); animation: slideUp 0.3s ease-out; }
+.call-type { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.call-type.incoming { background: #00ff88; box-shadow: 0 0 4px rgba(0,255,136,0.5); }
+.call-type.outgoing { background: #00e5ff; box-shadow: 0 0 4px rgba(0,229,255,0.5); }
+.call-type.missed { background: #ff1744; box-shadow: 0 0 4px rgba(255,23,68,0.5); }
 .call-type.other { background: #666; }
 .call-info { flex: 1; min-width: 0; }
-.call-name { font-size: 13px; color: #c0c0c0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.call-number { font-size: 11px; color: #556; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.call-name { font-size: 12px; color: #c0c0c0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.call-number { font-size: 10px; color: #556; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .call-meta { text-align: right; flex-shrink: 0; }
-.call-time { font-size: 11px; color: #556; }
-.call-duration { font-size: 10px; color: #445; }
-.top-bar { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 1000; display: none; }
-.top-bar .refresh-btn { background: rgba(6,6,18,0.92); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 10px 16px; border-radius: 10px; font-size: 14px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
-.top-bar .refresh-btn:hover { box-shadow: 0 0 12px rgba(0,229,255,0.3); }
-.top-bar .disconnect-btn { position: absolute; right: 10px; background: rgba(6,6,18,0.92); border: 1px solid rgba(255,23,68,0.3); color: #ff5252; padding: 10px 16px; border-radius: 10px; font-size: 14px; cursor: pointer; transition: all 0.3s; }
-.top-bar .disconnect-btn:hover { box-shadow: 0 0 12px rgba(255,23,68,0.3); }
-@media (max-width: 600px) {
-  .code-input input { width: 44px; height: 54px; font-size: 24px; }
-  .login-box { padding: 24px; }
-  .info-panel { bottom: 10px; left: 10px; right: 10px; padding: 12px 14px; }
+.call-time { font-size: 10px; color: #556; }
+.call-duration { font-size: 9px; color: #445; }
+.top-bar { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 1000; display: none; }
+.top-bar .refresh-btn { background: rgba(6,6,18,0.92); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
+.top-bar .disconnect-btn { position: absolute; right: 8px; background: rgba(6,6,18,0.92); border: 1px solid rgba(255,23,68,0.3); color: #ff5252; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+@media (max-width: 360px) {
+  .code-input { gap: 4px; }
+  .code-input input { min-width: 28px; font-size: 16px; }
+  .login-box { padding: 20px 14px; }
+  .login-box h2 { font-size: 18px; }
+}
+@media (min-width: 1024px) {
+  .login-box { max-width: 440px; padding: 36px 28px; }
+  .login-box h2 { font-size: 26px; }
+  .info-panel { max-width: 480px; left: auto; right: 16px; }
 }
 </style>
 </head>
 <body>
 <div class="header">
-  <span class="made-by">MADE BY OMR</span>
   <h1>TSP</h1>
   <div class="status" id="status" data-en="Not connected" data-ar="غير متصل">Not connected</div>
   <button class="lang-btn" id="langBtn" onclick="toggleLang()">عربي</button>
 </div>
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
-    <h2 data-en="Tracker ID" data-ar="معرّف التتبع">Tracker ID</h2>
-    <div class="subtitle">TRACKER SYSTEM PRO</div>
+    <div class="brand">
+      <h2 data-en="Tracker ID" data-ar="معرّف التتبع">Tracker ID</h2>
+      <div class="subtitle">TRACKER SYSTEM PRO</div>
+      <div class="made-by">MADE BY OMR</div>
+    </div>
     <p data-en="Enter the 6-digit Tracker ID code" data-ar="أدخل رمز معرّف التتبع المكون من 6 أرقام">Enter the 6-digit Tracker ID code</p>
     <div class="code-input" id="codeInput">
       <input type="text" maxlength="1" inputmode="numeric" autofocus>
@@ -239,6 +275,12 @@ body::before { content: ''; position: fixed; top: -50%; left: -50%; width: 200%;
       <input type="text" maxlength="1" inputmode="numeric">
     </div>
     <button class="connect-btn" id="connectBtn" disabled data-en="Connect" data-ar="اتصال">Connect</button>
+    <div class="pairing-wait" id="pairingWait">
+      <div class="spinner"></div>
+      <div class="text" data-en="Waiting for acceptance..." data-ar="في انتظار القبول...">Waiting for acceptance...</div>
+      <div class="sub" data-en="Approve on the tracked device" data-ar="الموافقة من الجهاز المُتتبع">Approve on the tracked device</div>
+      <button class="cancel-btn" id="cancelPairBtn" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+    </div>
   </div>
 </div>
 <div class="map-container" id="mapContainer">
@@ -260,13 +302,16 @@ body::before { content: ''; position: fixed; top: -50%; left: -50%; width: 200%;
 </div>
 <script>
 let currentLang = localStorage.getItem('tsp-lang') || 'en';
-let map, marker, trail, currentCode, refreshInterval;
+let deviceId = localStorage.getItem('tsp-device-id');
+if (!deviceId) { deviceId = crypto.randomUUID(); localStorage.setItem('tsp-device-id', deviceId); }
+let map, marker, trail, currentCode, refreshInterval, pairPollInterval;
 const inputs = document.querySelectorAll('.code-input input');
 const connectBtn = document.getElementById('connectBtn');
 const loginScreen = document.getElementById('loginScreen');
 const mapContainer = document.getElementById('mapContainer');
 const topBar = document.getElementById('topBar');
 const infoPanel = document.getElementById('infoPanel');
+const pairingWait = document.getElementById('pairingWait');
 const API_BASE = "https://tsp.omaromartest12.workers.dev";
 
 function toggleLang() {
@@ -274,15 +319,11 @@ function toggleLang() {
   localStorage.setItem('tsp-lang', currentLang);
   applyLang();
 }
-
 function applyLang() {
-  const html = document.documentElement;
-  html.setAttribute('lang', currentLang);
-  html.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+  document.documentElement.setAttribute('lang', currentLang);
+  document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
   document.getElementById('langBtn').textContent = currentLang === 'en' ? 'عربي' : 'English';
-  document.querySelectorAll('[data-en]').forEach(el => {
-    el.textContent = el.getAttribute('data-' + currentLang);
-  });
+  document.querySelectorAll('[data-en]').forEach(el => { el.textContent = el.getAttribute('data-' + currentLang); });
 }
 applyLang();
 
@@ -303,13 +344,69 @@ inputs.forEach((input, i) => {
     updateConnectBtn();
   });
 });
-
 function updateConnectBtn() { connectBtn.disabled = getCode().length !== 6; }
 function getCode() { return Array.from(inputs).map(i => i.value).join(''); }
 
-connectBtn.addEventListener('click', () => {
+connectBtn.addEventListener('click', async () => {
   currentCode = getCode();
   if (currentCode.length !== 6) return;
+  const pairKey = 'tsp-paired-' + currentCode;
+  if (localStorage.getItem(pairKey) === deviceId) {
+    startTracking();
+    return;
+  }
+  connectBtn.style.display = 'none';
+  document.querySelector('.code-input').style.display = 'none';
+  document.querySelector('.login-box p').style.display = 'none';
+  pairingWait.style.display = 'block';
+  try {
+    const res = await fetch(API_BASE + '/api/pair-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: currentCode, device_id: deviceId, device_info: navigator.userAgent })
+    });
+    const data = await res.json();
+    if (data.status === 'accepted') {
+      localStorage.setItem(pairKey, deviceId);
+      startTracking();
+      return;
+    }
+    pollPairStatus(data.id);
+  } catch (e) {
+    resetPairingUI();
+  }
+});
+
+function pollPairStatus(requestId) {
+  pairPollInterval = setInterval(async () => {
+    try {
+      const res = await fetch(API_BASE + '/api/pair-status?code=' + currentCode + '&device_id=' + deviceId);
+      const data = await res.json();
+      if (data.status === 'accepted') {
+        clearInterval(pairPollInterval);
+        localStorage.setItem('tsp-paired-' + currentCode, deviceId);
+        startTracking();
+      } else if (data.status === 'declined') {
+        clearInterval(pairPollInterval);
+        resetPairingUI();
+      }
+    } catch (e) {}
+  }, 2000);
+}
+
+document.getElementById('cancelPairBtn').addEventListener('click', () => {
+  clearInterval(pairPollInterval);
+  resetPairingUI();
+});
+
+function resetPairingUI() {
+  pairingWait.style.display = 'none';
+  connectBtn.style.display = '';
+  document.querySelector('.code-input').style.display = '';
+  document.querySelector('.login-box p').style.display = '';
+}
+
+function startTracking() {
   loginScreen.style.display = 'none';
   mapContainer.style.display = 'flex';
   topBar.style.display = 'block';
@@ -318,10 +415,12 @@ connectBtn.addEventListener('click', () => {
   refreshInterval = setInterval(fetchLocation, 1000);
   document.getElementById('status').textContent = currentLang === 'ar' ? 'متصل: ' + currentCode : 'Connected: ' + currentCode;
   document.getElementById('status').className = 'status online';
-});
+}
 
 document.getElementById('disconnectBtn').addEventListener('click', () => {
   clearInterval(refreshInterval);
+  clearInterval(pairPollInterval);
+  localStorage.removeItem('tsp-paired-' + currentCode);
   currentCode = null;
   loginScreen.style.display = 'flex';
   mapContainer.style.display = 'none';
@@ -330,9 +429,9 @@ document.getElementById('disconnectBtn').addEventListener('click', () => {
   document.getElementById('callsSection').style.display = 'none';
   inputs.forEach(i => i.value = '');
   inputs[0].focus();
+  resetPairingUI();
   document.getElementById('status').textContent = currentLang === 'ar' ? 'غير متصل' : 'Not connected';
   document.getElementById('status').className = 'status';
-  connectBtn.disabled = true;
 });
 
 document.getElementById('refreshBtn').addEventListener('click', fetchLocation);
@@ -355,32 +454,24 @@ async function fetchLocation() {
     const data = await res.json();
     updateMap(data);
     updateCalls(data.calls || []);
-    const liveText = currentLang === 'ar' ? 'متصل: ' + currentCode + ' | مباشر' : 'Connected: ' + currentCode + ' | Live';
-    document.getElementById('status').textContent = liveText;
+    document.getElementById('status').textContent = (currentLang === 'ar' ? 'متصل: ' : 'Connected: ') + currentCode + (currentLang === 'ar' ? ' | مباشر' : ' | Live');
   } catch (e) {
     document.getElementById('status').textContent = currentLang === 'ar' ? 'خطأ' : 'Error';
   }
 }
 
 function updateMap(data) {
-  const lat = data.latitude;
-  const lng = data.longitude;
-  const pos = [lat, lng];
+  const lat = data.latitude, lng = data.longitude, pos = [lat, lng];
   if (marker) { marker.setLatLng(pos); } else {
     marker = L.circleMarker(pos, { radius: 10, fillColor: '#00e5ff', color: '#fff', weight: 2, fillOpacity: 0.9 }).addTo(map);
   }
   trail.addLatLng(pos);
   map.setView(pos, 16);
   infoPanel.style.display = 'block';
-  const ts = new Date(data.timestamp);
-  const now = new Date();
-  const ageSec = Math.floor((now - ts) / 1000);
+  const ageSec = Math.floor((Date.now() - new Date(data.timestamp)) / 1000);
   let ageText;
-  if (currentLang === 'ar') {
-    ageText = ageSec < 5 ? 'الآن' : ageSec < 60 ? 'منذ ' + ageSec + ' ث' : 'منذ ' + Math.floor(ageSec/60) + ' د ' + (ageSec%60) + ' ث';
-  } else {
-    ageText = ageSec < 5 ? 'Just now' : ageSec < 60 ? ageSec + 's ago' : Math.floor(ageSec/60) + 'm ' + (ageSec%60) + 's ago';
-  }
+  if (currentLang === 'ar') { ageText = ageSec < 5 ? 'الآن' : ageSec < 60 ? 'منذ ' + ageSec + ' ث' : 'منذ ' + Math.floor(ageSec/60) + ' د ' + (ageSec%60) + ' ث'; }
+  else { ageText = ageSec < 5 ? 'Just now' : ageSec < 60 ? ageSec + 's ago' : Math.floor(ageSec/60) + 'm ' + (ageSec%60) + 's ago'; }
   document.getElementById('lastUpdate').textContent = ageText;
   document.getElementById('lastUpdate').className = 'value' + (ageSec > 30 ? ' stale' : ageSec > 120 ? ' old' : '');
   document.getElementById('accuracy').textContent = data.accuracy ? data.accuracy.toFixed(0) + 'm' : 'N/A';
@@ -399,24 +490,13 @@ function updateCalls(calls) {
     const typeClass = typeMap[call.type] || 'other';
     const name = call.name || call.number || 'Unknown';
     const number = call.name ? call.number : '';
-    const date = new Date(call.date);
-    const now = new Date();
-    const mins = Math.floor((now - date) / 60000);
-    let timeStr;
-    if (currentLang === 'ar') {
-      timeStr = mins < 1 ? 'الآن' : mins < 60 ? mins + ' د' : Math.floor(mins/60) + ' س';
-    } else {
-      timeStr = mins < 1 ? 'Now' : mins < 60 ? mins + 'm' : Math.floor(mins/60) + 'h';
-    }
+    const mins = Math.floor((Date.now() - call.date) / 60000);
+    const timeStr = currentLang === 'ar' ? (mins < 1 ? 'الآن' : mins < 60 ? mins + ' د' : Math.floor(mins/60) + ' س') : (mins < 1 ? 'Now' : mins < 60 ? mins + 'm' : Math.floor(mins/60) + 'h');
     const dur = call.duration;
     const durStr = dur > 0 ? Math.floor(dur/60) + ':' + String(dur%60).padStart(2,'0') : '-';
     const item = document.createElement('div');
     item.className = 'call-item';
-    item.innerHTML = '<div class="call-type ' + typeClass + '"></div>' +
-      '<div class="call-info"><div class="call-name">' + name + '</div>' +
-      (number ? '<div class="call-number">' + number + '</div>' : '') + '</div>' +
-      '<div class="call-meta"><div class="call-time">' + timeStr + '</div>' +
-      '<div class="call-duration">' + durStr + '</div></div>';
+    item.innerHTML = '<div class="call-type ' + typeClass + '"></div><div class="call-info"><div class="call-name">' + name + '</div>' + (number ? '<div class="call-number">' + number + '</div>' : '') + '</div><div class="call-meta"><div class="call-time">' + timeStr + '</div><div class="call-duration">' + durStr + '</div></div>';
     list.appendChild(item);
   });
 }
