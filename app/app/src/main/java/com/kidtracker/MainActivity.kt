@@ -70,7 +70,8 @@ class MainActivity : AppCompatActivity() {
         val savedCode = prefs.getString("tracking_code", null)
 
         if (savedCode != null && savedCode.length == 6) {
-            checkAllPermissionsThenStart(savedCode)
+            ensureCallLogPermission()
+            startTracking(savedCode)
             return
         }
 
@@ -96,6 +97,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private var pendingStartCode: String? = null
+
+    private fun ensureCallLogPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG)
+            != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                arrayOf(Manifest.permission.READ_CALL_LOG), PERMISSION_REQUEST)
+        }
+    }
 
     private fun showSetupUI() {
         binding.setupSection.visibility = View.VISIBLE

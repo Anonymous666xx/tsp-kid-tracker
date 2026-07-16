@@ -10,6 +10,14 @@
     android:layoutDirection="ltr"
     android:textDirection="ltr">
 
+    <ImageView
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:src="@mipmap/ic_launcher"
+        android:scaleType="fitCenter"
+        android:layout_marginBottom="12dp"
+        android:contentDescription="@string/app_name" />
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
