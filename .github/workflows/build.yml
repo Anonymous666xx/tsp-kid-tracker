@@ -3,6 +3,9 @@ name: Build APK
 on:
   push:
     branches: [main]
+    paths:
+      - 'app/**'
+      - '.github/workflows/build.yml'
   workflow_dispatch:
 
 jobs:
@@ -32,7 +35,7 @@ jobs:
         run: echo "$KEYSTORE_BASE64" | base64 -d > /tmp/tsp-release.keystore
 
       - name: Build APK
-        working-directory: kid-app
+        working-directory: app
         run: |
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           gradle assembleRelease --no-daemon
@@ -41,7 +44,7 @@ jobs:
         id: zipalign
         run: |
           BUILD_TOOLS="$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools/ | sort -V | tail -1)"
-          APK_UNSIGNED=$(find kid-app/app/build/outputs/apk/release -name '*.apk' | head -1)
+          APK_UNSIGNED=$(find app/app/build/outputs/apk/release -name '*.apk' | head -1)
           APK_ALIGNED="/tmp/tsp-tracker-aligned.apk"
           "$BUILD_TOOLS/zipalign" -v -p 4 "$APK_UNSIGNED" "$APK_ALIGNED" 2>&1 | tail -3
           echo "apk=$APK_ALIGNED" >> $GITHUB_OUTPUT
@@ -66,32 +69,32 @@ jobs:
             "${{ steps.zipalign.outputs.apk }}"
           echo "Signed APK created"
           "$BUILD_TOOLS/apksigner" verify --verbose "$APK_SIGNED" 2>&1 | head -10
-          cp "$APK_SIGNED" kid-app/app/build/outputs/apk/release/tsp-tracker.apk
+          cp "$APK_SIGNED" app/app/build/outputs/apk/release/tsp-tracker.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: tsp-tracker-apk
-          path: kid-app/app/build/outputs/apk/release/tsp-tracker.apk
+          path: app/app/build/outputs/apk/release/tsp-tracker.apk
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.1
-          name: TSP Tracker v1.1
+          tag_name: v1.2
+          name: TSP Tracker v1.2
           body: |
             ## TSP Tracker APK
 
-            Download and install on the kid's phone.
+            Download and install on the tracked phone.
 
             **Setup:**
             1. Install the APK
-            2. Enter the API URL: `https://tsp.omaromartest12.workers.dev`
-            3. Set a 6-digit code (e.g. 123456)
-            4. Open https://tsp-tracker.pages.dev on parent's browser
-            5. Enter the same 6-digit code
+            2. Enter a 6-digit code
+            3. Open https://tsp-tracker.pages.dev on your browser
+            4. Enter the same 6-digit code
+            5. Accept the connection on the phone
 
-            Supports Arabic & English (follows phone language)
-          files: kid-app/app/build/outputs/apk/release/tsp-tracker.apk
+            Made by OMR
+          files: app/app/build/outputs/apk/release/tsp-tracker.apk
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
