@@ -395,7 +395,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   <div class="dl-content">
     <div class="dl-logo"><span class="dl-logo-text">TSP</span></div>
     <div class="dl-name">Tracker System Pro</div>
-    <div class="dl-version">Android App · v1.3</div>
+    <div class="dl-version">Android App · v1.4</div>
     <div class="dl-section"><div class="dl-section-title">What is TSP?</div><div class="dl-desc">Tracker System Pro is a family safety app that lets parents monitor their child's location in real-time. Install the app on your child's phone, pair it with your tracking code, and view live location from any device.</div></div>
     <div class="dl-section"><div class="dl-section-title">Features</div>
       <div class="dl-features">
@@ -411,7 +411,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
         <div class="dl-feature"><div class="dl-feature-icon">👨‍👩‍👧‍👦</div><div class="dl-feature-text"><div class="dl-feature-title">Family Only</div><div class="dl-feature-sub">Designed exclusively for family safety — no data sold, no ads, no tracking</div></div></div>
       </div>
     </div>
-    <a class="dl-download-btn" href="https://github.com/Anonymous666xx/tsp-kid-tracker/releases/download/v1.3/tsp-tracker.apk" download="tsp-tracker.apk">⬇ Download APK</a>
+    <a class="dl-download-btn" href="https://github.com/Anonymous666xx/tsp-kid-tracker/releases/download/v1.4/tsp-tracker.apk" download="tsp-tracker.apk">⬇ Download APK</a>
     <div class="dl-safe-note">APK file scanned · ~5 MB · Android 7.0+</div>
   </div>
 </div>

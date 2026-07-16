@@ -80,12 +80,15 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.3
-          name: TSP Tracker v1.3
+          tag_name: v1.4
+          name: TSP Tracker v1.4
           body: |
-            ## TSP Tracker APK
+            ## TSP Tracker APK v1.4
 
-            Download and install on the tracked phone.
+            **New features:**
+            - Multi-device tracking (multiple phones, same code)
+            - Screenshot capture from parent dashboard
+            - Device name tabs to switch between phones
 
             **Setup:**
             1. Install the APK
