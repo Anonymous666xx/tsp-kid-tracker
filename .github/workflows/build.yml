@@ -29,26 +29,44 @@ jobs:
       - name: Decode Keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > /tmp/tsp-release.keystore
-          echo "KEYSTORE_PATH=/tmp/tsp-release.keystore" >> $GITHUB_ENV
-          echo "KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
-          echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
-          echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_ENV
+        run: echo "$KEYSTORE_BASE64" | base64 -d > /tmp/tsp-release.keystore
 
-      - name: Build Signed APK
+      - name: Build APK
         working-directory: kid-app
         run: |
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           gradle assembleRelease --no-daemon
 
       - name: Zipalign APK
+        id: zipalign
         run: |
-          ALIGNER="$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools/ | sort -V | tail -1)/zipalign"
-          APK_IN=$(find kid-app/app/build/outputs/apk/release -name '*.apk' | head -1)
-          APK_OUT="/tmp/tsp-tracker.apk"
-          $ALIGNER -v -p 4 $APK_IN $APK_OUT 2>&1 | tail -3
-          cp $APK_OUT kid-app/app/build/outputs/apk/release/tsp-tracker.apk
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools/ | sort -V | tail -1)"
+          APK_UNSIGNED=$(find kid-app/app/build/outputs/apk/release -name '*.apk' | head -1)
+          APK_ALIGNED="/tmp/tsp-tracker-aligned.apk"
+          "$BUILD_TOOLS/zipalign" -v -p 4 "$APK_UNSIGNED" "$APK_ALIGNED" 2>&1 | tail -3
+          echo "apk=$APK_ALIGNED" >> $GITHUB_OUTPUT
+
+      - name: Sign APK with apksigner
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools/ | sort -V | tail -1)"
+          APK_SIGNED="/tmp/tsp-tracker.apk"
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks /tmp/tsp-release.keystore \
+            --ks-pass "pass:$KEYSTORE_PASSWORD" \
+            --ks-key-alias "$KEY_ALIAS" \
+            --key-pass "pass:$KEY_PASSWORD" \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --out "$APK_SIGNED" \
+            "${{ steps.zipalign.outputs.apk }}"
+          echo "Signed APK created"
+          "$BUILD_TOOLS/apksigner" verify --verbose "$APK_SIGNED" 2>&1 | head -10
+          cp "$APK_SIGNED" kid-app/app/build/outputs/apk/release/tsp-tracker.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
