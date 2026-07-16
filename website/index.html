@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSP - Parent View</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a1a; color: #fff; height: 100vh; display: flex; flex-direction: column; }
+.header { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 12px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 2px solid #0f3460; flex-shrink: 0; }
+.header h1 { font-size: 18px; color: #e94560; }
+.header .status { font-size: 12px; color: #aaa; margin-left: auto; }
+.header .status.online { color: #4ade80; }
+.login-screen { flex: 1; display: flex; align-items: center; justify-content: center; }
+.login-box { background: #1a1a2e; padding: 40px; border-radius: 16px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.4); border: 1px solid #0f3460; width: 90%; max-width: 400px; }
+.login-box h2 { margin-bottom: 8px; font-size: 24px; }
+.login-box p { color: #aaa; margin-bottom: 24px; font-size: 14px; }
+.code-input { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; }
+.code-input input { width: 50px; height: 60px; text-align: center; font-size: 28px; font-weight: bold; background: #0f3460; border: 2px solid #1a1a3e; border-radius: 12px; color: #e94560; outline: none; transition: all 0.2s; }
+.code-input input:focus { border-color: #e94560; box-shadow: 0 0 12px rgba(233,69,96,0.3); }
+.connect-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #e94560, #c23152); border: none; border-radius: 12px; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.connect-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(233,69,96,0.4); }
+.connect-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.map-container { flex: 1; position: relative; display: none; }
+#map { width: 100%; height: 100%; }
+.info-panel { position: absolute; bottom: 20px; left: 20px; right: 20px; background: rgba(26,26,46,0.95); backdrop-filter: blur(10px); padding: 16px 20px; border-radius: 14px; border: 1px solid #0f3460; z-index: 1000; display: none; }
+.info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; }
+.info-row .label { color: #aaa; }
+.info-row .value { font-weight: 600; }
+.info-row .value.stale { color: #f59e0b; }
+.info-row .value.old { color: #ef4444; }
+.top-bar { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 1000; display: none; }
+.top-bar .refresh-btn { background: rgba(26,26,46,0.95); border: 1px solid #0f3460; color: #e94560; padding: 10px 16px; border-radius: 10px; font-size: 14px; cursor: pointer; font-weight: 600; }
+.top-bar .disconnect-btn { float: right; background: rgba(26,26,46,0.95); border: 1px solid #0f3460; color: #aaa; padding: 10px 16px; border-radius: 10px; font-size: 14px; cursor: pointer; }
+@media (max-width: 600px) {
+  .code-input input { width: 44px; height: 54px; font-size: 24px; }
+  .login-box { padding: 24px; }
+  .info-panel { bottom: 10px; left: 10px; right: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>TSP</h1>
+  <div class="status" id="status">Not connected</div>
+</div>
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <h2>Track Your Kid</h2>
+    <p>Enter the 6-digit code from the kid's app</p>
+    <div class="code-input" id="codeInput">
+      <input type="text" maxlength="1" inputmode="numeric" autofocus>
+      <input type="text" maxlength="1" inputmode="numeric">
+      <input type="text" maxlength="1" inputmode="numeric">
+      <input type="text" maxlength="1" inputmode="numeric">
+      <input type="text" maxlength="1" inputmode="numeric">
+      <input type="text" maxlength="1" inputmode="numeric">
+    </div>
+    <button class="connect-btn" id="connectBtn" disabled>Connect</button>
+  </div>
+</div>
+<div class="map-container" id="mapContainer">
+  <div class="top-bar" id="topBar">
+    <button class="refresh-btn" id="refreshBtn">Refresh</button>
+    <button class="disconnect-btn" id="disconnectBtn">Disconnect</button>
+  </div>
+  <div id="map"></div>
+  <div class="info-panel" id="infoPanel">
+    <div class="info-row"><span class="label">Last update:</span><span class="value" id="lastUpdate">-</span></div>
+    <div class="info-row"><span class="label">Accuracy:</span><span class="value" id="accuracy">-</span></div>
+    <div class="info-row"><span class="label">Battery:</span><span class="value" id="battery">-</span></div>
+    <div class="info-row"><span class="label">Position:</span><span class="value" id="position">-</span></div>
+  </div>
+</div>
+<script>
+let map, marker, trail, currentCode, refreshInterval;
+const inputs = document.querySelectorAll('.code-input input');
+const connectBtn = document.getElementById('connectBtn');
+const loginScreen = document.getElementById('loginScreen');
+const mapContainer = document.getElementById('mapContainer');
+const topBar = document.getElementById('topBar');
+const infoPanel = document.getElementById('infoPanel');
+
+inputs.forEach((input, i) => {
+  input.addEventListener('input', (e) => {
+    if (e.target.value && i < 5) inputs[i+1].focus();
+    updateConnectBtn();
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && !e.target.value && i > 0) inputs[i-1].focus();
+    if (e.key === 'Enter') connectBtn.click();
+  });
+  input.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\\D/g, '').slice(0, 6);
+    paste.split('').forEach((char, j) => { if (inputs[j]) inputs[j].value = char; });
+    if (paste.length > 0) inputs[Math.min(paste.length, 5)].focus();
+    updateConnectBtn();
+  });
+});
+
+function updateConnectBtn() {
+  const code = getCode();
+  connectBtn.disabled = code.length !== 6;
+}
+
+function getCode() {
+  return Array.from(inputs).map(i => i.value).join('');
+}
+
+connectBtn.addEventListener('click', () => {
+  currentCode = getCode();
+  if (currentCode.length !== 6) return;
+  loginScreen.style.display = 'none';
+  mapContainer.style.display = 'flex';
+  topBar.style.display = 'block';
+  initMap();
+  fetchLocation();
+  refreshInterval = setInterval(fetchLocation, 1000);
+  document.getElementById('status').textContent = 'Connected: ' + currentCode;
+  document.getElementById('status').className = 'status online';
+});
+
+document.getElementById('disconnectBtn').addEventListener('click', () => {
+  clearInterval(refreshInterval);
+  currentCode = null;
+  loginScreen.style.display = 'flex';
+  mapContainer.style.display = 'none';
+  topBar.style.display = 'none';
+  infoPanel.style.display = 'none';
+  inputs.forEach(i => i.value = '');
+  inputs[0].focus();
+  document.getElementById('status').textContent = 'Not connected';
+  document.getElementById('status').className = 'status';
+  connectBtn.disabled = true;
+});
+
+document.getElementById('refreshBtn').addEventListener('click', fetchLocation);
+
+function initMap() {
+  if (map) return;
+  map = L.map('map', { zoomControl: false }).setView([0, 0], 2);
+  L.control.zoom({ position: 'topright' }).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OSM &copy; CartoDB',
+    maxZoom: 19
+  }).addTo(map);
+  trail = L.polyline([], { color: '#e94560', weight: 3, opacity: 0.7 }).addTo(map);
+}
+
+const API_BASE = "https://tsp.omaromartest12.workers.dev";
+
+async function fetchLocation() {
+  if (!currentCode) return;
+  try {
+    const res = await fetch(API_BASE + '/api/get-location?code=' + currentCode);
+    if (!res.ok) return;
+    const data = await res.json();
+    updateMap(data);
+    document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live';
+  } catch (e) {
+    document.getElementById('status').textContent = 'Connection error';
+  }
+}
+
+function updateMap(data) {
+  const lat = data.latitude;
+  const lng = data.longitude;
+  const pos = [lat, lng];
+
+  if (marker) {
+    marker.setLatLng(pos);
+  } else {
+    marker = L.circleMarker(pos, { radius: 10, fillColor: '#e94560', color: '#fff', weight: 2, fillOpacity: 0.9 }).addTo(map);
+  }
+
+  trail.addLatLng(pos);
+  map.setView(pos, 16);
+
+  infoPanel.style.display = 'block';
+  const ts = new Date(data.timestamp);
+  const now = new Date();
+  const ageSec = Math.floor((now - ts) / 1000);
+  let ageText = ageSec < 5 ? 'Just now' : ageSec < 60 ? ageSec + 's ago' : Math.floor(ageSec/60) + 'm ' + (ageSec%60) + 's ago';
+  document.getElementById('lastUpdate').textContent = ageText;
+  document.getElementById('lastUpdate').className = 'value' + (ageSec > 30 ? ' stale' : ageSec > 120 ? ' old' : '');
+  document.getElementById('accuracy').textContent = data.accuracy ? data.accuracy.toFixed(0) + 'm' : 'N/A';
+  document.getElementById('battery').textContent = data.battery != null ? data.battery + '%' : 'N/A';
+  document.getElementById('position').textContent = lat.toFixed(5) + ', ' + lng.toFixed(5);
+}
+</script>
+</body>
+</html>

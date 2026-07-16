@@ -124,7 +124,7 @@
         android:id="@+id/apiUrlInput"
         android:layout_width="match_parent"
         android:layout_height="52dp"
-        android:hint="Worker URL (e.g. https://kid-tracker.XXX.workers.dev)"
+        android:hint="https://tsp.omaromartest12.workers.dev"
         android:textColorHint="#555555"
         android:textColor="#ccc"
         android:textSize="13sp"
