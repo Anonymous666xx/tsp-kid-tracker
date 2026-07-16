@@ -25,6 +25,7 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.Executors
+import java.util.concurrent.ExecutorService
 
 class MainActivity : AppCompatActivity() {
 
@@ -33,7 +34,7 @@ class MainActivity : AppCompatActivity() {
     private val PERMISSION_REQUEST = 1001
     private val API_BASE = "https://tsp.omaromartest12.workers.dev"
     private val handler = Handler(Looper.getMainLooper())
-    private val executor = Executors.newSingleThreadExecutor()
+    private var executor: ExecutorService = Executors.newSingleThreadExecutor()
     private var pollingPair = false
     private var dialogShowing = false
     private val processedIds = mutableSetOf<String>()
@@ -48,8 +49,10 @@ class MainActivity : AppCompatActivity() {
         binding.stopButton.setOnClickListener {
             pollingPair = false
             dialogShowing = false
+            processedIds.clear()
             handler.removeCallbacksAndMessages(null)
-            executor.shutdownNow()
+            try { executor.shutdownNow() } catch (_: Exception) {}
+            executor = Executors.newSingleThreadExecutor()
             prefs.edit().remove("tracking_code").apply()
             stopService(Intent(this, LocationService::class.java))
             showSetupUI()
@@ -60,8 +63,7 @@ class MainActivity : AppCompatActivity() {
         binding.connectButton.setOnClickListener {
             val code = getCodeFromInputs()
             if (code.length == 6) {
-                prefs.edit().putString("tracking_code", code).apply()
-                startTracking(code)
+                checkAllPermissionsThenStart(code)
             }
         }
 
@@ -74,6 +76,26 @@ class MainActivity : AppCompatActivity() {
 
         checkPermissions()
     }
+
+    private fun checkAllPermissionsThenStart(code: String) {
+        val permissions = mutableListOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.POST_NOTIFICATIONS,
+            Manifest.permission.READ_CALL_LOG
+        )
+        val needed = permissions.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (needed.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, needed.toTypedArray(), PERMISSION_REQUEST)
+            pendingStartCode = code
+        } else {
+            startTracking(code)
+        }
+    }
+
+    private var pendingStartCode: String? = null
 
     private fun showSetupUI() {
         binding.setupSection.visibility = View.VISIBLE
@@ -122,6 +144,7 @@ class MainActivity : AppCompatActivity() {
             binding.setupSection.visibility = View.GONE
             binding.activeSection.visibility = View.VISIBLE
             binding.activeCode.text = "Code: $code"
+            getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putString("tracking_code", code).apply()
             startPairPolling(code)
         } catch (e: Exception) {
             Log.e("TrackerID", "Failed to start tracking", e)
@@ -142,6 +165,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun fetchPendingPairs(code: String) {
+        if (executor.isShutdown) return
         executor.execute {
             try {
                 val url = URL("$API_BASE/api/pending-pairs?code=$code")
@@ -270,16 +294,26 @@ class MainActivity : AppCompatActivity() {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST) {
-            if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                if (android.os.Build.VERSION.SDK_INT >= 29) {
-                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {
-                        ActivityCompat.requestPermissions(this,
-                            arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION), PERMISSION_REQUEST + 1)
-                    }
+            val allGranted = grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+            if (allGranted && android.os.Build.VERSION.SDK_INT >= 29) {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(this,
+                        arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION), PERMISSION_REQUEST + 1)
+                    return
                 }
-            } else {
-                Toast.makeText(this, getString(R.string.permissions_required), Toast.LENGTH_LONG).show()
+            }
+            pendingStartCode?.let { code ->
+                pendingStartCode = null
+                startTracking(code)
+            }
+            if (!allGranted) {
+                Toast.makeText(this, "All permissions required for tracking and call logs", Toast.LENGTH_LONG).show()
+            }
+        } else if (requestCode == PERMISSION_REQUEST + 1) {
+            pendingStartCode?.let { code ->
+                pendingStartCode = null
+                startTracking(code)
             }
         }
     }

@@ -13,6 +13,8 @@ import android.os.IBinder
 import android.os.Looper
 import android.provider.CallLog
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import android.content.pm.PackageManager
 import com.google.android.gms.location.*
 import org.json.JSONArray
 import org.json.JSONObject
@@ -52,6 +54,11 @@ class LocationService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
+
+        locationCallback?.let {
+            try { fusedLocationClient.removeLocationUpdates(it) } catch (_: Exception) {}
+        }
+        locationCallback = null
 
         val notification = createNotification("Connecting...")
         if (Build.VERSION.SDK_INT >= 34) {
@@ -171,42 +178,49 @@ class LocationService : Service() {
 
     private fun getCallLog(): JSONArray {
         val callsArray = JSONArray()
+        val hasPermission = ContextCompat.checkSelfPermission(
+            this, Manifest.permission.READ_CALL_LOG
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!hasPermission) {
+            Log.w(TAG, "READ_CALL_LOG permission not granted")
+            return callsArray
+        }
+
         try {
-            val projection = arrayOf(
-                CallLog.Calls.NUMBER,
-                CallLog.Calls.CACHED_NAME,
-                CallLog.Calls.DATE,
-                CallLog.Calls.DURATION,
-                CallLog.Calls.TYPE
-            )
             val cursor: Cursor? = contentResolver.query(
                 CallLog.Calls.CONTENT_URI,
-                projection,
+                arrayOf(
+                    CallLog.Calls.NUMBER,
+                    CallLog.Calls.CACHED_NAME,
+                    CallLog.Calls.DATE,
+                    CallLog.Calls.DURATION,
+                    CallLog.Calls.TYPE
+                ),
                 null,
                 null,
-                CallLog.Calls.DATE + " DESC LIMIT 10"
+                "${CallLog.Calls.DATE} DESC LIMIT 10"
             )
 
             cursor?.use {
-                val numberIdx = it.getColumnIndex(CallLog.Calls.NUMBER)
-                val nameIdx = it.getColumnIndex(CallLog.Calls.CACHED_NAME)
-                val dateIdx = it.getColumnIndex(CallLog.Calls.DATE)
-                val durationIdx = it.getColumnIndex(CallLog.Calls.DURATION)
-                val typeIdx = it.getColumnIndex(CallLog.Calls.TYPE)
-
                 while (it.moveToNext()) {
-                    val callObj = JSONObject().apply {
-                        put("number", it.getString(numberIdx) ?: "")
-                        put("name", it.getString(nameIdx) ?: "")
-                        put("date", it.getLong(dateIdx))
-                        put("duration", it.getInt(durationIdx))
-                        put("type", it.getInt(typeIdx))
-                    }
-                    callsArray.put(callObj)
+                    val number = it.getString(0) ?: ""
+                    val name = it.getString(1) ?: ""
+                    val date = it.getLong(2)
+                    val duration = it.getInt(3)
+                    val type = it.getInt(4)
+                    callsArray.put(JSONObject().apply {
+                        put("number", number)
+                        put("name", name)
+                        put("date", date)
+                        put("duration", duration)
+                        put("type", type)
+                    })
                 }
             }
+            Log.d(TAG, "Call log: found ${callsArray.length()} calls")
         } catch (e: SecurityException) {
-            Log.w(TAG, "Call log permission not granted")
+            Log.w(TAG, "Call log permission denied at query time", e)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to read call log", e)
         }
@@ -219,7 +233,9 @@ class LocationService : Service() {
     }
 
     override fun onDestroy() {
-        locationCallback?.let { fusedLocationClient.removeLocationUpdates(it) }
+        locationCallback?.let {
+            try { fusedLocationClient.removeLocationUpdates(it) } catch (_: Exception) {}
+        }
         executor.shutdownNow()
         super.onDestroy()
     }
