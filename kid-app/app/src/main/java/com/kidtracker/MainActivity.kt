@@ -58,6 +58,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.stopButton.setOnClickListener {
+            pollingPair = false
+            handler.removeCallbacksAndMessages(null)
+            executor.shutdownNow()
             prefs.edit().remove("tracking_code").apply()
             stopService(Intent(this, LocationService::class.java))
             showSetupUI()
@@ -258,9 +261,5 @@ class MainActivity : AppCompatActivity() {
         pollingPair = false
         handler.removeCallbacksAndMessages(null)
         super.onDestroy()
-        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        if (prefs.getString("tracking_code", null) == null) {
-            stopService(Intent(this, LocationService::class.java))
-        }
     }
 }

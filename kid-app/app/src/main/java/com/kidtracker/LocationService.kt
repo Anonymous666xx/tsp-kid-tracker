@@ -220,7 +220,7 @@ class LocationService : Service() {
 
     override fun onDestroy() {
         locationCallback?.let { fusedLocationClient.removeLocationUpdates(it) }
-        executor.shutdown()
+        executor.shutdownNow()
         super.onDestroy()
     }
 }

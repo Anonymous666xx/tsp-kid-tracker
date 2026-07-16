@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -15,15 +15,12 @@
 @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html { height: 100%; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Arabic', 'Noto Kufi Arabic', sans-serif; background: #060612; color: #e0e0e0; height: 100%; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; -webkit-font-smoothing: antialiased; }
-html[dir="rtl"] body { font-family: 'Noto Sans Arabic', 'Noto Kufi Arabic', -apple-system, BlinkMacSystemFont, sans-serif; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #060612; color: #e0e0e0; height: 100%; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; -webkit-font-smoothing: antialiased; }
 body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 30% 20%, rgba(0,229,255,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(124,77,255,0.04) 0%, transparent 50%); animation: bgGlow 8s ease-in-out infinite; pointer-events: none; z-index: 0; }
 .header { background: linear-gradient(135deg, #0a0e1a, #0d1b2a); padding: 10px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(0,229,255,0.2); flex-shrink: 0; position: relative; z-index: 1; min-height: 44px; }
 .header h1 { font-size: 17px; color: #00e5ff; font-weight: 800; letter-spacing: 2px; animation: neonPulse 3s ease-in-out infinite; }
-.header .status { font-size: 11px; color: #556; margin-left: auto; margin-right: 50px; transition: color 0.3s; white-space: nowrap; }
+.header .status { font-size: 11px; color: #556; margin-left: auto; transition: color 0.3s; white-space: nowrap; }
 .header .status.online { color: #00ff88; text-shadow: 0 0 6px rgba(0,255,136,0.4); }
-.lang-btn { background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 5px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 600; position: absolute; right: 12px; flex-shrink: 0; transition: all 0.3s; }
-.lang-btn:hover { background: rgba(0,229,255,0.15); }
 .login-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; position: relative; z-index: 1; }
 .login-box { background: linear-gradient(145deg, #0d1117, #0a0e1a); padding: 28px 20px; border-radius: 18px; text-align: center; box-shadow: 0 0 40px rgba(0,229,255,0.05), 0 8px 32px rgba(0,0,0,0.6); border: 1px solid rgba(0,229,255,0.15); width: 100%; max-width: 380px; animation: neonBorder 4s ease-in-out infinite; }
 .login-box .brand { margin-bottom: 16px; }
@@ -45,10 +42,15 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 .pairing-wait .cancel-btn:hover { background: rgba(255,23,68,0.1); }
 .map-container { flex: 1; position: relative; display: none; z-index: 1; }
 #map { width: 100%; height: 100%; }
-.info-panel { position: absolute; bottom: 16px; left: 16px; right: 16px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(0,229,255,0.15); z-index: 1000; display: none; max-height: 40vh; overflow-y: auto; }
+.top-bar { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 10000; display: none; }
+.top-bar .refresh-btn { background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
+.top-bar .refresh-btn:active { background: rgba(0,229,255,0.15); }
+.top-bar .disconnect-btn { position: absolute; right: 8px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); border: 1px solid rgba(255,23,68,0.3); color: #ff5252; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+.top-bar .disconnect-btn:active { background: rgba(255,23,68,0.15); }
+.info-panel { position: absolute; bottom: 16px; left: 16px; right: 16px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(0,229,255,0.15); z-index: 10000; display: none; max-height: 40vh; overflow-y: auto; }
 .info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; gap: 6px; }
 .info-row .label { color: #556; flex-shrink: 0; }
-.info-row .value { font-weight: 600; text-align: end; word-break: break-all; color: #c0c0c0; }
+.info-row .value { font-weight: 600; text-align: right; word-break: break-all; color: #c0c0c0; }
 .info-row .value.stale { color: #ff9100; }
 .info-row .value.old { color: #ff1744; }
 .calls-section { margin-top: 10px; border-top: 1px solid rgba(0,229,255,0.1); padding-top: 10px; }
@@ -65,9 +67,6 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 .call-meta { text-align: right; flex-shrink: 0; }
 .call-time { font-size: 10px; color: #556; }
 .call-duration { font-size: 9px; color: #445; }
-.top-bar { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 1000; display: none; }
-.top-bar .refresh-btn { background: rgba(6,6,18,0.92); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; }
-.top-bar .disconnect-btn { position: absolute; right: 8px; background: rgba(6,6,18,0.92); border: 1px solid rgba(255,23,68,0.3); color: #ff5252; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
 @media (max-width: 360px) {
   .code-input { gap: 4px; }
   .code-input input { min-width: 28px; font-size: 16px; }
@@ -84,17 +83,16 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 <body>
 <div class="header">
   <h1>TSP</h1>
-  <div class="status" id="status" data-en="Not connected" data-ar="غير متصل">Not connected</div>
-  <button class="lang-btn" id="langBtn" onclick="toggleLang()">عربي</button>
+  <div class="status" id="status">Not connected</div>
 </div>
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
     <div class="brand">
-      <h2 data-en="Tracker ID" data-ar="معرّف التتبع">Tracker ID</h2>
+      <h2>Tracker ID</h2>
       <div class="subtitle">TRACKER SYSTEM PRO</div>
       <div class="made-by">MADE BY OMR</div>
     </div>
-    <p data-en="Enter the 6-digit Tracker ID code" data-ar="أدخل رمز معرّف التتبع المكون من 6 أرقام">Enter the 6-digit Tracker ID code</p>
+    <p>Enter the 6-digit Tracker ID code</p>
     <div class="code-input" id="codeInput">
       <input type="text" maxlength="1" inputmode="numeric" autofocus>
       <input type="text" maxlength="1" inputmode="numeric">
@@ -103,34 +101,33 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
       <input type="text" maxlength="1" inputmode="numeric">
       <input type="text" maxlength="1" inputmode="numeric">
     </div>
-    <button class="connect-btn" id="connectBtn" disabled data-en="Connect" data-ar="اتصال">Connect</button>
+    <button class="connect-btn" id="connectBtn" disabled>Connect</button>
     <div class="pairing-wait" id="pairingWait">
       <div class="spinner"></div>
-      <div class="text" data-en="Waiting for acceptance..." data-ar="في انتظار القبول...">Waiting for acceptance...</div>
-      <div class="sub" data-en="Approve on the tracked device" data-ar="الموافقة من الجهاز المُتتبع">Approve on the tracked device</div>
-      <button class="cancel-btn" id="cancelPairBtn" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+      <div class="text">Waiting for acceptance...</div>
+      <div class="sub">Approve on the tracked device</div>
+      <button class="cancel-btn" id="cancelPairBtn">Cancel</button>
     </div>
   </div>
 </div>
 <div class="map-container" id="mapContainer">
   <div class="top-bar" id="topBar">
-    <button class="refresh-btn" id="refreshBtn" data-en="Refresh" data-ar="تحديث">Refresh</button>
-    <button class="disconnect-btn" id="disconnectBtn" data-en="Disconnect" data-ar="قطع الاتصال">Disconnect</button>
+    <button class="refresh-btn" id="refreshBtn">Refresh</button>
+    <button class="disconnect-btn" id="disconnectBtn">Disconnect</button>
   </div>
   <div id="map"></div>
   <div class="info-panel" id="infoPanel">
-    <div class="info-row"><span class="label" data-en="Last update:" data-ar="آخر تحديث:">Last update:</span><span class="value" id="lastUpdate">-</span></div>
-    <div class="info-row"><span class="label" data-en="Accuracy:" data-ar="الدقة:">Accuracy:</span><span class="value" id="accuracy">-</span></div>
-    <div class="info-row"><span class="label" data-en="Battery:" data-ar="البطارية:">Battery:</span><span class="value" id="battery">-</span></div>
-    <div class="info-row"><span class="label" data-en="Position:" data-ar="الموقع:">Position:</span><span class="value" id="position">-</span></div>
+    <div class="info-row"><span class="label">Last update:</span><span class="value" id="lastUpdate">-</span></div>
+    <div class="info-row"><span class="label">Accuracy:</span><span class="value" id="accuracy">-</span></div>
+    <div class="info-row"><span class="label">Battery:</span><span class="value" id="battery">-</span></div>
+    <div class="info-row"><span class="label">Position:</span><span class="value" id="position">-</span></div>
     <div class="calls-section" id="callsSection" style="display:none">
-      <div class="calls-title" data-en="Recent Calls" data-ar="المكالمات الأخيرة">Recent Calls</div>
+      <div class="calls-title">Recent Calls</div>
       <div id="callsList"></div>
     </div>
   </div>
 </div>
 <script>
-let currentLang = localStorage.getItem('tsp-lang') || 'en';
 let deviceId = localStorage.getItem('tsp-device-id');
 if (!deviceId) { deviceId = crypto.randomUUID(); localStorage.setItem('tsp-device-id', deviceId); }
 let map, marker, trail, currentCode, refreshInterval, pairPollInterval;
@@ -142,19 +139,6 @@ const topBar = document.getElementById('topBar');
 const infoPanel = document.getElementById('infoPanel');
 const pairingWait = document.getElementById('pairingWait');
 const API_BASE = "https://tsp.omaromartest12.workers.dev";
-
-function toggleLang() {
-  currentLang = currentLang === 'en' ? 'ar' : 'en';
-  localStorage.setItem('tsp-lang', currentLang);
-  applyLang();
-}
-function applyLang() {
-  document.documentElement.setAttribute('lang', currentLang);
-  document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
-  document.getElementById('langBtn').textContent = currentLang === 'en' ? 'عربي' : 'English';
-  document.querySelectorAll('[data-en]').forEach(el => { el.textContent = el.getAttribute('data-' + currentLang); });
-}
-applyLang();
 
 inputs.forEach((input, i) => {
   input.addEventListener('input', (e) => {
@@ -242,7 +226,7 @@ function startTracking() {
   initMap();
   fetchLocation();
   refreshInterval = setInterval(fetchLocation, 1000);
-  document.getElementById('status').textContent = currentLang === 'ar' ? 'متصل: ' + currentCode : 'Connected: ' + currentCode;
+  document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live';
   document.getElementById('status').className = 'status online';
 }
 
@@ -259,16 +243,19 @@ document.getElementById('disconnectBtn').addEventListener('click', () => {
   inputs.forEach(i => i.value = '');
   inputs[0].focus();
   resetPairingUI();
-  document.getElementById('status').textContent = currentLang === 'ar' ? 'غير متصل' : 'Not connected';
+  document.getElementById('status').textContent = 'Not connected';
   document.getElementById('status').className = 'status';
 });
 
-document.getElementById('refreshBtn').addEventListener('click', fetchLocation);
+document.getElementById('refreshBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  fetchLocation();
+});
 
 function initMap() {
-  if (map) return;
+  if (map) { map.invalidateSize(); return; }
   map = L.map('map', { zoomControl: false }).setView([0, 0], 2);
-  L.control.zoom({ position: 'topright' }).addTo(map);
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OSM &copy; CartoDB', maxZoom: 19
   }).addTo(map);
@@ -283,9 +270,9 @@ async function fetchLocation() {
     const data = await res.json();
     updateMap(data);
     updateCalls(data.calls || []);
-    document.getElementById('status').textContent = (currentLang === 'ar' ? 'متصل: ' : 'Connected: ') + currentCode + (currentLang === 'ar' ? ' | مباشر' : ' | Live');
+    document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live';
   } catch (e) {
-    document.getElementById('status').textContent = currentLang === 'ar' ? 'خطأ' : 'Error';
+    document.getElementById('status').textContent = 'Error';
   }
 }
 
@@ -298,9 +285,7 @@ function updateMap(data) {
   map.setView(pos, 16);
   infoPanel.style.display = 'block';
   const ageSec = Math.floor((Date.now() - new Date(data.timestamp)) / 1000);
-  let ageText;
-  if (currentLang === 'ar') { ageText = ageSec < 5 ? 'الآن' : ageSec < 60 ? 'منذ ' + ageSec + ' ث' : 'منذ ' + Math.floor(ageSec/60) + ' د ' + (ageSec%60) + ' ث'; }
-  else { ageText = ageSec < 5 ? 'Just now' : ageSec < 60 ? ageSec + 's ago' : Math.floor(ageSec/60) + 'm ' + (ageSec%60) + 's ago'; }
+  const ageText = ageSec < 5 ? 'Just now' : ageSec < 60 ? ageSec + 's ago' : Math.floor(ageSec/60) + 'm ' + (ageSec%60) + 's ago';
   document.getElementById('lastUpdate').textContent = ageText;
   document.getElementById('lastUpdate').className = 'value' + (ageSec > 30 ? ' stale' : ageSec > 120 ? ' old' : '');
   document.getElementById('accuracy').textContent = data.accuracy ? data.accuracy.toFixed(0) + 'm' : 'N/A';
@@ -320,7 +305,7 @@ function updateCalls(calls) {
     const name = call.name || call.number || 'Unknown';
     const number = call.name ? call.number : '';
     const mins = Math.floor((Date.now() - call.date) / 60000);
-    const timeStr = currentLang === 'ar' ? (mins < 1 ? 'الآن' : mins < 60 ? mins + ' د' : Math.floor(mins/60) + ' س') : (mins < 1 ? 'Now' : mins < 60 ? mins + 'm' : Math.floor(mins/60) + 'h');
+    const timeStr = mins < 1 ? 'Now' : mins < 60 ? mins + 'm' : Math.floor(mins/60) + 'h';
     const dur = call.duration;
     const durStr = dur > 0 ? Math.floor(dur/60) + ':' + String(dur%60).padStart(2,'0') : '-';
     const item = document.createElement('div');
