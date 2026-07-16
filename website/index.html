@@ -83,6 +83,33 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
   .login-box { padding: 20px 14px; }
   .login-box h2 { font-size: 18px; }
 }
+.dl-btn { display: inline-block; margin-top: 16px; padding: 10px 20px; background: transparent; border: 1px solid rgba(0,229,255,0.25); color: #00e5ff; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; letter-spacing: 1px; transition: all 0.3s; text-decoration: none; }
+.dl-btn:hover { background: rgba(0,229,255,0.08); border-color: rgba(0,229,255,0.5); }
+.dl-overlay { display: none; position: fixed; inset: 0; z-index: 50000; background: #060612; overflow-y: auto; flex-direction: column; }
+.dl-overlay.open { display: flex; }
+.dl-topbar { background: linear-gradient(135deg, #0a0e1a, #0d1b2a); padding: 12px 16px; display: flex; align-items: center; border-bottom: 1px solid rgba(0,229,255,0.2); flex-shrink: 0; }
+.dl-topbar .dl-back { background: none; border: none; color: #00e5ff; font-size: 14px; cursor: pointer; font-weight: 600; padding: 4px 0; }
+.dl-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 32px 24px 48px; max-width: 500px; margin: 0 auto; width: 100%; }
+.dl-logo { width: 100px; height: 100px; border-radius: 24px; background: linear-gradient(135deg, #0d1117, #0a0e1a); border: 2px solid rgba(0,229,255,0.3); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; box-shadow: 0 0 40px rgba(0,229,255,0.15); }
+.dl-logo-text { font-size: 32px; font-weight: 900; color: #00e5ff; letter-spacing: 3px; text-shadow: 0 0 20px rgba(0,229,255,0.5); }
+.dl-name { font-size: 22px; color: #00e5ff; font-weight: 800; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0,229,255,0.3); margin-bottom: 4px; }
+.dl-version { color: #556; font-size: 11px; margin-bottom: 24px; }
+.dl-section { width: 100%; margin-bottom: 20px; }
+.dl-section-title { font-size: 10px; color: #7c4dff; letter-spacing: 2px; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; }
+.dl-desc { color: #aabbbb; font-size: 13px; line-height: 1.7; }
+.dl-features { display: flex; flex-direction: column; gap: 10px; }
+.dl-feature { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: rgba(0,229,255,0.03); border: 1px solid rgba(0,229,255,0.08); border-radius: 10px; }
+.dl-feature-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px; background: rgba(0,255,136,0.08); color: #00ff88; }
+.dl-feature-icon.blue { background: rgba(0,229,255,0.08); color: #00e5ff; }
+.dl-feature-icon.purple { background: rgba(124,77,255,0.08); color: #7c4dff; }
+.dl-feature-text { flex: 1; }
+.dl-feature-title { font-size: 13px; color: #e0e0e0; font-weight: 600; }
+.dl-feature-sub { font-size: 11px; color: #556; margin-top: 2px; }
+.dl-download-btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #00e5ff, #7c4dff); border: none; border-radius: 12px; color: #060612; font-size: 16px; font-weight: 800; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; text-align: center; display: block; margin-top: 24px; transition: all 0.3s; }
+.dl-download-btn:hover { transform: translateY(-1px); box-shadow: 0 0 24px rgba(0,229,255,0.4); }
+.dl-download-btn:active { transform: translateY(0); }
+.dl-safe-note { color: #445; font-size: 10px; text-align: center; margin-top: 12px; }
+@media (max-width: 360px) { .dl-content { padding: 24px 16px 40px; } }
 @media (min-width: 1024px) {
   .login-box { max-width: 440px; padding: 36px 28px; }
   .login-box h2 { font-size: 26px; }
@@ -112,6 +139,7 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
       <input type="text" maxlength="1" inputmode="numeric">
     </div>
     <button class="connect-btn" id="connectBtn" disabled>Connect</button>
+    <button class="dl-btn" id="openDlBtn">📱 Download App</button>
     <div class="pairing-wait" id="pairingWait">
       <div class="spinner"></div>
       <div class="text">Waiting for acceptance...</div>
@@ -143,6 +171,78 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
       <div class="calls-title">Recent Calls</div>
       <div id="callsList"></div>
     </div>
+  </div>
+</div>
+<div class="dl-overlay" id="dlOverlay">
+  <div class="dl-topbar">
+    <button class="dl-back" id="dlBackBtn">← Back</button>
+  </div>
+  <div class="dl-content">
+    <div class="dl-logo"><span class="dl-logo-text">TSP</span></div>
+    <div class="dl-name">Tracker System Pro</div>
+    <div class="dl-version">Android App &middot; v1.2</div>
+
+    <div class="dl-section">
+      <div class="dl-section-title">What is TSP?</div>
+      <div class="dl-desc">Tracker System Pro is a family safety app that lets parents monitor their child's location in real-time. Install the app on your child's phone, pair it with your tracking code, and view live location from any device.</div>
+    </div>
+
+    <div class="dl-section">
+      <div class="dl-section-title">Features</div>
+      <div class="dl-features">
+        <div class="dl-feature">
+          <div class="dl-feature-icon">📍</div>
+          <div class="dl-feature-text">
+            <div class="dl-feature-title">Live GPS Tracking</div>
+            <div class="dl-feature-sub">Real-time location updates every second on an encrypted connection</div>
+          </div>
+        </div>
+        <div class="dl-feature">
+          <div class="dl-feature-icon blue">📞</div>
+          <div class="dl-feature-text">
+            <div class="dl-feature-title">Call History</div>
+            <div class="dl-feature-sub">View recent calls with contact names, numbers, duration and type</div>
+          </div>
+        </div>
+        <div class="dl-feature">
+          <div class="dl-feature-icon purple">🔗</div>
+          <div class="dl-feature-text">
+            <div class="dl-feature-title">Secure Pairing</div>
+            <div class="dl-feature-sub">One-time approval required &mdash; no one can connect without device owner consent</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dl-section">
+      <div class="dl-section-title">Safe &amp; Private</div>
+      <div class="dl-features">
+        <div class="dl-feature">
+          <div class="dl-feature-icon">🔒</div>
+          <div class="dl-feature-text">
+            <div class="dl-feature-title">End-to-End Encrypted</div>
+            <div class="dl-feature-sub">All data is transmitted over HTTPS with Cloudflare encryption</div>
+          </div>
+        </div>
+        <div class="dl-feature">
+          <div class="dl-feature-icon">🛡️</div>
+          <div class="dl-feature-text">
+            <div class="dl-feature-title">Pairing Required</div>
+            <div class="dl-feature-sub">Cannot connect without approval on the child's device &mdash; no unauthorized access possible</div>
+          </div>
+        </div>
+        <div class="dl-feature">
+          <div class="dl-feature-icon">👨‍👩‍👧‍👦</div>
+          <div class="dl-feature-text">
+            <div class="dl-feature-title">Family Only</div>
+            <div class="dl-feature-sub">Designed exclusively for family safety &mdash; no data sold, no ads, no tracking</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <a class="dl-download-btn" href="https://github.com/Anonymous666xx/tsp-kid-tracker/releases/download/v1.2/tsp-tracker.apk" download="tsp-tracker.apk">⬇ Download APK</a>
+    <div class="dl-safe-note">APK file scanned &middot; ~5 MB &middot; Android 7.0+</div>
   </div>
 </div>
 <script>
@@ -414,6 +514,13 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+
+document.getElementById('openDlBtn').addEventListener('click', () => {
+  document.getElementById('dlOverlay').classList.add('open');
+});
+document.getElementById('dlBackBtn').addEventListener('click', () => {
+  document.getElementById('dlOverlay').classList.remove('open');
+});
 
 (function autoReconnect() {
   const savedCode = localStorage.getItem('tsp-current-code');

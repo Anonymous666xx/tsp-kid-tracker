@@ -236,6 +236,33 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .call-time { font-size: 10px; color: #556; }
 .call-duration { font-size: 11px; color: #00e5ff; font-weight: 600; margin-top: 1px; }
 @media (max-width: 360px) { .code-input { gap: 4px; } .code-input input { min-width: 28px; font-size: 16px; } }
+.dl-btn { display: inline-block; margin-top: 16px; padding: 10px 20px; background: transparent; border: 1px solid rgba(0,229,255,0.25); color: #00e5ff; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; letter-spacing: 1px; transition: all 0.3s; text-decoration: none; }
+.dl-btn:hover { background: rgba(0,229,255,0.08); border-color: rgba(0,229,255,0.5); }
+.dl-overlay { display: none; position: fixed; inset: 0; z-index: 50000; background: #060612; overflow-y: auto; flex-direction: column; }
+.dl-overlay.open { display: flex; }
+.dl-topbar { background: linear-gradient(135deg, #0a0e1a, #0d1b2a); padding: 12px 16px; display: flex; align-items: center; border-bottom: 1px solid rgba(0,229,255,0.2); flex-shrink: 0; }
+.dl-topbar .dl-back { background: none; border: none; color: #00e5ff; font-size: 14px; cursor: pointer; font-weight: 600; padding: 4px 0; }
+.dl-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 32px 24px 48px; max-width: 500px; margin: 0 auto; width: 100%; }
+.dl-logo { width: 100px; height: 100px; border-radius: 24px; background: linear-gradient(135deg, #0d1117, #0a0e1a); border: 2px solid rgba(0,229,255,0.3); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; box-shadow: 0 0 40px rgba(0,229,255,0.15); }
+.dl-logo-text { font-size: 32px; font-weight: 900; color: #00e5ff; letter-spacing: 3px; text-shadow: 0 0 20px rgba(0,229,255,0.5); }
+.dl-name { font-size: 22px; color: #00e5ff; font-weight: 800; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0,229,255,0.3); margin-bottom: 4px; }
+.dl-version { color: #556; font-size: 11px; margin-bottom: 24px; }
+.dl-section { width: 100%; margin-bottom: 20px; }
+.dl-section-title { font-size: 10px; color: #7c4dff; letter-spacing: 2px; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; }
+.dl-desc { color: #aabbbb; font-size: 13px; line-height: 1.7; }
+.dl-features { display: flex; flex-direction: column; gap: 10px; }
+.dl-feature { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: rgba(0,229,255,0.03); border: 1px solid rgba(0,229,255,0.08); border-radius: 10px; }
+.dl-feature-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px; background: rgba(0,255,136,0.08); color: #00ff88; }
+.dl-feature-icon.blue { background: rgba(0,229,255,0.08); color: #00e5ff; }
+.dl-feature-icon.purple { background: rgba(124,77,255,0.08); color: #7c4dff; }
+.dl-feature-text { flex: 1; }
+.dl-feature-title { font-size: 13px; color: #e0e0e0; font-weight: 600; }
+.dl-feature-sub { font-size: 11px; color: #556; margin-top: 2px; }
+.dl-download-btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #00e5ff, #7c4dff); border: none; border-radius: 12px; color: #060612; font-size: 16px; font-weight: 800; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; text-align: center; display: block; margin-top: 24px; transition: all 0.3s; }
+.dl-download-btn:hover { transform: translateY(-1px); box-shadow: 0 0 24px rgba(0,229,255,0.4); }
+.dl-download-btn:active { transform: translateY(0); }
+.dl-safe-note { color: #445; font-size: 10px; text-align: center; margin-top: 12px; }
+@media (max-width: 360px) { .code-input { gap: 4px; } .code-input input { min-width: 28px; font-size: 16px; } }
 </style>
 </head>
 <body>
@@ -253,6 +280,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <p>Enter the 6-digit Tracker ID code</p>
     <div class="code-input"><input type="text" maxlength="1" inputmode="numeric" autofocus><input type="text" maxlength="1" inputmode="numeric"><input type="text" maxlength="1" inputmode="numeric"><input type="text" maxlength="1" inputmode="numeric"><input type="text" maxlength="1" inputmode="numeric"><input type="text" maxlength="1" inputmode="numeric"></div>
     <button class="connect-btn" id="connectBtn" disabled>Connect</button>
+    <button class="dl-btn" id="openDlBtn">📱 Download App</button>
     <div class="pairing-wait" id="pairingWait">
       <div class="spinner"></div>
       <div class="text">Waiting for acceptance...</div>
@@ -276,6 +304,31 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       <div class="calls-title">Recent Calls</div>
       <div id="callsList"></div>
     </div>
+  </div>
+</div>
+<div class="dl-overlay" id="dlOverlay">
+  <div class="dl-topbar"><button class="dl-back" id="dlBackBtn">← Back</button></div>
+  <div class="dl-content">
+    <div class="dl-logo"><span class="dl-logo-text">TSP</span></div>
+    <div class="dl-name">Tracker System Pro</div>
+    <div class="dl-version">Android App · v1.2</div>
+    <div class="dl-section"><div class="dl-section-title">What is TSP?</div><div class="dl-desc">Tracker System Pro is a family safety app that lets parents monitor their child's location in real-time. Install the app on your child's phone, pair it with your tracking code, and view live location from any device.</div></div>
+    <div class="dl-section"><div class="dl-section-title">Features</div>
+      <div class="dl-features">
+        <div class="dl-feature"><div class="dl-feature-icon">📍</div><div class="dl-feature-text"><div class="dl-feature-title">Live GPS Tracking</div><div class="dl-feature-sub">Real-time location updates every second on an encrypted connection</div></div></div>
+        <div class="dl-feature"><div class="dl-feature-icon blue">📞</div><div class="dl-feature-text"><div class="dl-feature-title">Call History</div><div class="dl-feature-sub">View recent calls with contact names, numbers, duration and type</div></div></div>
+        <div class="dl-feature"><div class="dl-feature-icon purple">🔗</div><div class="dl-feature-text"><div class="dl-feature-title">Secure Pairing</div><div class="dl-feature-sub">One-time approval required — no one can connect without device owner consent</div></div></div>
+      </div>
+    </div>
+    <div class="dl-section"><div class="dl-section-title">Safe &amp; Private</div>
+      <div class="dl-features">
+        <div class="dl-feature"><div class="dl-feature-icon">🔒</div><div class="dl-feature-text"><div class="dl-feature-title">End-to-End Encrypted</div><div class="dl-feature-sub">All data is transmitted over HTTPS with Cloudflare encryption</div></div></div>
+        <div class="dl-feature"><div class="dl-feature-icon">🛡️</div><div class="dl-feature-text"><div class="dl-feature-title">Pairing Required</div><div class="dl-feature-sub">Cannot connect without approval on the child's device — no unauthorized access possible</div></div></div>
+        <div class="dl-feature"><div class="dl-feature-icon">👨‍👩‍👧‍👦</div><div class="dl-feature-text"><div class="dl-feature-title">Family Only</div><div class="dl-feature-sub">Designed exclusively for family safety — no data sold, no ads, no tracking</div></div></div>
+      </div>
+    </div>
+    <a class="dl-download-btn" href="https://github.com/Anonymous666xx/tsp-kid-tracker/releases/download/v1.2/tsp-tracker.apk" download="tsp-tracker.apk">⬇ Download APK</a>
+    <div class="dl-safe-note">APK file scanned · ~5 MB · Android 7.0+</div>
   </div>
 </div>
 <script>
@@ -307,6 +360,8 @@ function startTracking() { loginScreen.style.display = 'none'; mapContainer.styl
 function checkDisconnected() { if (!currentCode || !lastDataTime) return; if ((Date.now() - lastDataTime) / 1000 > 15 && !isDisconnected) { isDisconnected = true; document.getElementById('status').textContent = 'Disconnected'; document.getElementById('status').className = 'status disconnected'; } }
 document.getElementById('disconnectBtn').addEventListener('click', () => { clearInterval(refreshInterval); clearInterval(pairPollInterval); localStorage.removeItem('tsp-paired-' + currentCode); localStorage.removeItem('tsp-current-code'); currentCode = null; lastDataTime = 0; isDisconnected = false; loginScreen.style.display = 'flex'; mapContainer.style.display = 'none'; topBar.style.display = 'none'; infoPanel.style.display = 'none'; document.getElementById('callsSection').style.display = 'none'; inputs.forEach(i => i.value = ''); inputs[0].focus(); resetPairingUI(); document.getElementById('status').textContent = 'Not connected'; document.getElementById('status').className = 'status'; });
 document.getElementById('refreshBtn').addEventListener('click', () => { fetchLocation(); });
+document.getElementById('openDlBtn').addEventListener('click', () => { document.getElementById('dlOverlay').classList.add('open'); });
+document.getElementById('dlBackBtn').addEventListener('click', () => { document.getElementById('dlOverlay').classList.remove('open'); });
 function initMap() { if (map) { map.invalidateSize(); return; } map = L.map('map', { zoomControl: false }).setView([0, 0], 2); L.control.zoom({ position: 'bottomright' }).addTo(map); L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: 'OSM CartoDB', maxZoom: 19 }).addTo(map); trail = L.polyline([], { color: '#00e5ff', weight: 3, opacity: 0.8 }).addTo(map); }
 async function fetchLocation() { if (!currentCode) return; try { const res = await fetch(API_BASE + '/api/get-location?code=' + currentCode); if (!res.ok) return; const data = await res.json(); if (!data.latitude) return; lastDataTime = Date.now(); if (isDisconnected) { isDisconnected = false; document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live'; document.getElementById('status').className = 'status online'; } updateMap(data); updateCalls(data.calls || []); document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live'; } catch (e) {} }
 function updateMap(data) { const lat = data.latitude, lng = data.longitude, pos = [lat, lng]; if (marker) { marker.setLatLng(pos); } else { marker = L.circleMarker(pos, { radius: 10, fillColor: '#00e5ff', color: '#fff', weight: 2, fillOpacity: 0.9 }).addTo(map); } trail.addLatLng(pos); map.setView(pos, 16); infoPanel.style.display = 'block'; const ageSec = Math.floor((Date.now() - new Date(data.timestamp)) / 1000); document.getElementById('lastUpdate').textContent = ageSec < 5 ? 'Just now' : ageSec < 60 ? ageSec + 's ago' : Math.floor(ageSec/60) + 'm ' + (ageSec%60) + 's ago'; document.getElementById('lastUpdate').className = 'value' + (ageSec > 30 ? ' stale' : ageSec > 120 ? ' old' : ''); document.getElementById('accuracy').textContent = data.accuracy ? data.accuracy.toFixed(0) + 'm' : 'N/A'; document.getElementById('battery').textContent = data.battery != null ? data.battery + '%' : 'N/A'; document.getElementById('position').textContent = lat.toFixed(5) + ', ' + lng.toFixed(5); }
