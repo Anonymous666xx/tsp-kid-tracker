@@ -1,18 +1,14 @@
 package com.kidtracker
 
 import android.Manifest
-import android.app.Activity
 import android.app.AlertDialog
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.media.projection.MediaProjectionManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.Settings
 import android.util.Log
 import android.view.Gravity
 import android.view.View
@@ -36,7 +32,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val PREFS_NAME = "TrackerIDPrefs"
     private val PERMISSION_REQUEST = 1001
-    private val MEDIA_PROJECTION_REQUEST = 1002
     private val API_BASE = "https://tsp.omaromartest12.workers.dev"
     private val handler = Handler(Looper.getMainLooper())
     private var executor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -160,33 +155,9 @@ class MainActivity : AppCompatActivity() {
             binding.activeCode.text = "Code: $code"
             getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putString("tracking_code", code).apply()
             startPairPolling(code)
-            startScreenshotService(code)
         } catch (e: Exception) {
             Log.e("TrackerID", "Failed to start tracking", e)
             Toast.makeText(this, "Failed to start: ${e.message}", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    private fun startScreenshotService(code: String) {
-        val projectionData = ScreenshotService.projectionData
-        if (projectionData != null) {
-            val deviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID) ?: "default"
-            val intent = Intent(this, ScreenshotService::class.java).apply {
-                putExtra("tracking_code", code)
-                putExtra("device_id", deviceId)
-            }
-            ContextCompat.startForegroundService(this, intent)
-        } else {
-            requestMediaProjection()
-        }
-    }
-
-    private fun requestMediaProjection() {
-        try {
-            val mgr = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-            startActivityForResult(mgr.createScreenCaptureIntent(), MEDIA_PROJECTION_REQUEST)
-        } catch (e: Exception) {
-            Log.e("TrackerID", "MediaProjection not supported", e)
         }
     }
 
@@ -352,24 +323,6 @@ class MainActivity : AppCompatActivity() {
             pendingStartCode?.let { code ->
                 pendingStartCode = null
                 startTracking(code)
-            }
-        }
-    }
-
-    @Deprecated("Use OnActivityResult instead")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == MEDIA_PROJECTION_REQUEST && resultCode == Activity.RESULT_OK && data != null) {
-            ScreenshotService.projectionData = data
-            ScreenshotService.resultCode = resultCode
-            val code = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getString("tracking_code", null)
-            if (code != null) {
-                val deviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID) ?: "default"
-                val intent = Intent(this, ScreenshotService::class.java).apply {
-                    putExtra("tracking_code", code)
-                    putExtra("device_id", deviceId)
-                }
-                ContextCompat.startForegroundService(this, intent)
             }
         }
     }
