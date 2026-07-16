@@ -12,9 +12,8 @@ class BootReceiver : BroadcastReceiver() {
 
         val prefs = context.getSharedPreferences("TrackerIDPrefs", Context.MODE_PRIVATE)
         val code = prefs.getString("tracking_code", null)
-        val apiBase = prefs.getString("api_base", null)
 
-        if (code != null && code.length == 6 && apiBase != null && apiBase.isNotEmpty()) {
+        if (code != null && code.length == 6) {
             val hasPermission = ContextCompat.checkSelfPermission(
                 context, android.Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED

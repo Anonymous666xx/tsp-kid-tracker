@@ -37,144 +37,114 @@
         android:textSize="9sp"
         android:layout_marginBottom="24dp" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/set_code"
-        android:textColor="#667788"
-        android:textSize="14sp"
-        android:layout_marginBottom="4dp" />
-
-    <TextView
-        android:id="@+id/statusText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/same_code_hint"
-        android:textColor="#556677"
-        android:textSize="12sp"
-        android:layout_marginBottom="32dp" />
-
     <LinearLayout
-        android:id="@+id/codeSection"
-        android:layout_width="wrap_content"
+        android:id="@+id/setupSection"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="28dp">
+        android:orientation="vertical"
+        android:gravity="center">
 
-        <EditText
-            android:id="@+id/code1"
-            android:layout_width="52dp"
-            android:layout_height="64dp"
-            android:gravity="center"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:textColor="#00e5ff"
-            android:background="@drawable/code_input_bg"
-            android:inputType="number"
-            android:maxLength="1"
-            android:layout_marginEnd="8dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/set_code"
+            android:textColor="#667788"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp" />
 
-        <EditText
-            android:id="@+id/code2"
-            android:layout_width="52dp"
-            android:layout_height="64dp"
-            android:gravity="center"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:textColor="#00e5ff"
-            android:background="@drawable/code_input_bg"
-            android:inputType="number"
-            android:maxLength="1"
-            android:layout_marginEnd="8dp" />
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/same_code_hint"
+            android:textColor="#556677"
+            android:textSize="12sp"
+            android:layout_marginBottom="32dp" />
 
-        <EditText
-            android:id="@+id/code3"
-            android:layout_width="52dp"
-            android:layout_height="64dp"
-            android:gravity="center"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:textColor="#00e5ff"
-            android:background="@drawable/code_input_bg"
-            android:inputType="number"
-            android:maxLength="1"
-            android:layout_marginEnd="8dp" />
+        <LinearLayout
+            android:id="@+id/codeSection"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="28dp">
 
-        <EditText
-            android:id="@+id/code4"
-            android:layout_width="52dp"
-            android:layout_height="64dp"
-            android:gravity="center"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:textColor="#00e5ff"
-            android:background="@drawable/code_input_bg"
-            android:inputType="number"
-            android:maxLength="1"
-            android:layout_marginEnd="8dp" />
+            <EditText android:id="@+id/code1" android:layout_width="52dp" android:layout_height="64dp" android:gravity="center" android:textSize="28sp" android:textStyle="bold" android:textColor="#00e5ff" android:background="@drawable/code_input_bg" android:inputType="number" android:maxLength="1" android:layout_marginEnd="8dp" />
+            <EditText android:id="@+id/code2" android:layout_width="52dp" android:layout_height="64dp" android:gravity="center" android:textSize="28sp" android:textStyle="bold" android:textColor="#00e5ff" android:background="@drawable/code_input_bg" android:inputType="number" android:maxLength="1" android:layout_marginEnd="8dp" />
+            <EditText android:id="@+id/code3" android:layout_width="52dp" android:layout_height="64dp" android:gravity="center" android:textSize="28sp" android:textStyle="bold" android:textColor="#00e5ff" android:background="@drawable/code_input_bg" android:inputType="number" android:maxLength="1" android:layout_marginEnd="8dp" />
+            <EditText android:id="@+id/code4" android:layout_width="52dp" android:layout_height="64dp" android:gravity="center" android:textSize="28sp" android:textStyle="bold" android:textColor="#00e5ff" android:background="@drawable/code_input_bg" android:inputType="number" android:maxLength="1" android:layout_marginEnd="8dp" />
+            <EditText android:id="@+id/code5" android:layout_width="52dp" android:layout_height="64dp" android:gravity="center" android:textSize="28sp" android:textStyle="bold" android:textColor="#00e5ff" android:background="@drawable/code_input_bg" android:inputType="number" android:maxLength="1" android:layout_marginEnd="8dp" />
+            <EditText android:id="@+id/code6" android:layout_width="52dp" android:layout_height="64dp" android:gravity="center" android:textSize="28sp" android:textStyle="bold" android:textColor="#00e5ff" android:background="@drawable/code_input_bg" android:inputType="number" android:maxLength="1" />
 
-        <EditText
-            android:id="@+id/code5"
-            android:layout_width="52dp"
-            android:layout_height="64dp"
-            android:gravity="center"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:textColor="#00e5ff"
-            android:background="@drawable/code_input_bg"
-            android:inputType="number"
-            android:maxLength="1"
-            android:layout_marginEnd="8dp" />
+        </LinearLayout>
 
-        <EditText
-            android:id="@+id/code6"
-            android:layout_width="52dp"
-            android:layout_height="64dp"
-            android:gravity="center"
-            android:textSize="28sp"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/connectButton"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="@string/start_tracking"
+            android:textAllCaps="false"
+            android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="#00e5ff"
-            android:background="@drawable/code_input_bg"
-            android:inputType="number"
-            android:maxLength="1" />
+            android:textColor="#060612"
+            app:backgroundTint="#00e5ff"
+            app:cornerRadius="12dp"
+            android:enabled="false" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/bg_note"
+            android:textColor="#334455"
+            android:textSize="11sp"
+            android:gravity="center"
+            android:layout_marginTop="24dp" />
 
     </LinearLayout>
 
-    <EditText
-        android:id="@+id/apiUrlInput"
+    <LinearLayout
+        android:id="@+id/activeSection"
         android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:hint="https://tsp.omaromartest12.workers.dev"
-        android:textColorHint="#2a3a4a"
-        android:textColor="#8899aa"
-        android:textSize="13sp"
-        android:background="@drawable/code_input_bg"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:inputType="textUri"
-        android:singleLine="true"
-        android:layout_marginBottom="20dp" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/connectButton"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:text="@string/start_tracking"
-        android:textAllCaps="false"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:textColor="#060612"
-        app:backgroundTint="#00e5ff"
-        app:cornerRadius="12dp"
-        android:enabled="false" />
-
-    <TextView
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/bg_note"
-        android:textColor="#334455"
-        android:textSize="11sp"
+        android:orientation="vertical"
         android:gravity="center"
-        android:layout_marginTop="24dp" />
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/active_status"
+            android:textColor="#00ff88"
+            android:textSize="48sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.2"
+            android:layout_marginBottom="8dp" />
+
+        <View
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:background="@drawable/neon_dot"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/activeCode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#556677"
+            android:textSize="13sp"
+            android:layout_marginBottom="32dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/stopButton"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="@string/stop_tracking"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#fff"
+            app:backgroundTint="#ff1744"
+            app:cornerRadius="12dp" />
+
+    </LinearLayout>
 
 </LinearLayout>

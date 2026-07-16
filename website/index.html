@@ -12,6 +12,7 @@
 @keyframes neonGlow { 0%,100% { box-shadow: 0 0 5px #00e5ff, 0 0 10px rgba(0,229,255,0.3); } 50% { box-shadow: 0 0 10px #00e5ff, 0 0 25px rgba(0,229,255,0.5); } }
 @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 @keyframes bgGlow { 0%,100% { opacity: 0.03; } 50% { opacity: 0.07; } }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Arabic', 'Noto Kufi Arabic', sans-serif; background: #060612; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 body::before { content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse at 30% 20%, rgba(0,229,255,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(124,77,255,0.04) 0%, transparent 50%); animation: bgGlow 8s ease-in-out infinite; pointer-events: none; z-index: 0; }
@@ -37,12 +38,26 @@ html[dir="rtl"] body { font-family: 'Noto Sans Arabic', 'Noto Kufi Arabic', -app
 .connect-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
 .map-container { flex: 1; position: relative; display: none; z-index: 1; }
 #map { width: 100%; height: 100%; }
-.info-panel { position: absolute; bottom: 20px; left: 20px; right: 20px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(0,229,255,0.15); z-index: 1000; display: none; }
+.info-panel { position: absolute; bottom: 20px; left: 20px; right: 20px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(0,229,255,0.15); z-index: 1000; display: none; max-height: 45vh; overflow-y: auto; }
 .info-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px; gap: 8px; }
 .info-row .label { color: #556; flex-shrink: 0; }
 .info-row .value { font-weight: 600; text-align: end; word-break: break-all; color: #c0c0c0; }
 .info-row .value.stale { color: #ff9100; text-shadow: 0 0 6px rgba(255,145,0,0.3); }
 .info-row .value.old { color: #ff1744; text-shadow: 0 0 6px rgba(255,23,68,0.3); }
+.calls-section { margin-top: 12px; border-top: 1px solid rgba(0,229,255,0.1); padding-top: 12px; }
+.calls-title { font-size: 11px; color: #7c4dff; letter-spacing: 2px; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; }
+.call-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); animation: slideUp 0.3s ease-out; }
+.call-type { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.call-type.incoming { background: #00ff88; box-shadow: 0 0 6px rgba(0,255,136,0.5); }
+.call-type.outgoing { background: #00e5ff; box-shadow: 0 0 6px rgba(0,229,255,0.5); }
+.call-type.missed { background: #ff1744; box-shadow: 0 0 6px rgba(255,23,68,0.5); }
+.call-type.other { background: #666; }
+.call-info { flex: 1; min-width: 0; }
+.call-name { font-size: 13px; color: #c0c0c0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.call-number { font-size: 11px; color: #556; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.call-meta { text-align: right; flex-shrink: 0; }
+.call-time { font-size: 11px; color: #556; }
+.call-duration { font-size: 10px; color: #445; }
 .top-bar { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 1000; display: none; }
 .top-bar .refresh-btn { background: rgba(6,6,18,0.92); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 10px 16px; border-radius: 10px; font-size: 14px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
 .top-bar .refresh-btn:hover { box-shadow: 0 0 12px rgba(0,229,255,0.3); background: rgba(0,229,255,0.08); }
@@ -110,6 +125,10 @@ html[dir="rtl"] body { font-family: 'Noto Sans Arabic', 'Noto Kufi Arabic', -app
     <div class="info-row"><span class="label" data-en="Accuracy:" data-ar="الدقة:">Accuracy:</span><span class="value" id="accuracy">-</span></div>
     <div class="info-row"><span class="label" data-en="Battery:" data-ar="البطارية:">Battery:</span><span class="value" id="battery">-</span></div>
     <div class="info-row"><span class="label" data-en="Position:" data-ar="الموقع:">Position:</span><span class="value" id="position">-</span></div>
+    <div class="calls-section" id="callsSection" style="display:none">
+      <div class="calls-title" data-en="Recent Calls" data-ar="المكالمات الأخيرة">Recent Calls</div>
+      <div id="callsList"></div>
+    </div>
   </div>
 </div>
 <script>
@@ -192,6 +211,7 @@ document.getElementById('disconnectBtn').addEventListener('click', () => {
   document.getElementById('status').textContent = currentLang === 'ar' ? 'غير متصل' : 'Not connected';
   document.getElementById('status').className = 'status';
   connectBtn.disabled = true;
+  document.getElementById('callsSection').style.display = 'none';
 });
 
 document.getElementById('refreshBtn').addEventListener('click', fetchLocation);
@@ -214,6 +234,7 @@ async function fetchLocation() {
     if (!res.ok) return;
     const data = await res.json();
     updateMap(data);
+    updateCalls(data.calls || []);
     const liveText = currentLang === 'ar' ? 'متصل: ' + currentCode + ' | مباشر' : 'Connected: ' + currentCode + ' | Live';
     document.getElementById('status').textContent = liveText;
   } catch (e) {
@@ -257,6 +278,39 @@ function updateMap(data) {
   document.getElementById('accuracy').textContent = data.accuracy ? data.accuracy.toFixed(0) + 'm' : 'N/A';
   document.getElementById('battery').textContent = data.battery != null ? data.battery + '%' : 'N/A';
   document.getElementById('position').textContent = lat.toFixed(5) + ', ' + lng.toFixed(5);
+}
+
+function updateCalls(calls) {
+  const section = document.getElementById('callsSection');
+  const list = document.getElementById('callsList');
+  if (!calls || calls.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = '';
+  calls.forEach(call => {
+    const typeMap = { 1: 'incoming', 2: 'outgoing', 3: 'missed' };
+    const typeClass = typeMap[call.type] || 'other';
+    const name = call.name || call.number || 'Unknown';
+    const number = call.name ? call.number : '';
+    const date = new Date(call.date);
+    const now = new Date();
+    const mins = Math.floor((now - date) / 60000);
+    let timeStr;
+    if (currentLang === 'ar') {
+      timeStr = mins < 1 ? 'الآن' : mins < 60 ? mins + ' د' : Math.floor(mins/60) + ' س';
+    } else {
+      timeStr = mins < 1 ? 'Now' : mins < 60 ? mins + 'm' : Math.floor(mins/60) + 'h';
+    }
+    const dur = call.duration;
+    const durStr = dur > 0 ? Math.floor(dur/60) + ':' + String(dur%60).padStart(2,'0') : '-';
+    const item = document.createElement('div');
+    item.className = 'call-item';
+    item.innerHTML = '<div class="call-type ' + typeClass + '"></div>' +
+      '<div class="call-info"><div class="call-name">' + name + '</div>' +
+      (number ? '<div class="call-number">' + number + '</div>' : '') + '</div>' +
+      '<div class="call-meta"><div class="call-time">' + timeStr + '</div>' +
+      '<div class="call-duration">' + durStr + '</div></div>';
+    list.appendChild(item);
+  });
 }
 </script>
 </body>

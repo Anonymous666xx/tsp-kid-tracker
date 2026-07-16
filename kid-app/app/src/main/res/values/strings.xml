@@ -4,15 +4,14 @@
     <string name="subtitle">TRACKER SYSTEM PRO</string>
     <string name="set_code">Set your 6-digit Tracker ID</string>
     <string name="same_code_hint">Enter the same code on the website</string>
-    <string name="api_url_hint">Worker URL (e.g. https://tsp.XXX.workers.dev)</string>
     <string name="start_tracking">Start Tracking</string>
-    <string name="tracking_active">Tracking Active</string>
+    <string name="tracking_active">TSP Active</string>
     <string name="tracking_started">Tracking started with code: %s</string>
+    <string name="tracking_notification">Location tracking in progress</string>
     <string name="permissions_required">Location permissions required for tracking</string>
     <string name="permissions_granted">Permissions granted. Tap Connect to start.</string>
     <string name="bg_note">Runs in background and sends location every 1 second</string>
-    <string name="enter_code">Enter the code</string>
-    <string name="code_empty">Please enter the code</string>
-    <string name="api_empty">Please enter the server URL</string>
     <string name="made_by">Made by OMR</string>
+    <string name="stop_tracking">Stop Tracking</string>
+    <string name="active_status">ACTIVE</string>
 </resources>

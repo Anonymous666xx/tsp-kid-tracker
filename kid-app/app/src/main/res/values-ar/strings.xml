@@ -4,15 +4,14 @@
     <string name="subtitle">TRACKER SYSTEM PRO</string>
     <string name="set_code">حدد رمز معرّف التتبع</string>
     <string name="same_code_hint">أدخل نفس الرمز في الموقع</string>
-    <string name="api_url_hint">رابط الخادم (URL)</string>
     <string name="start_tracking">بدء التتبع</string>
-    <string name="tracking_active">التتبع نشط</string>
+    <string name="tracking_active">TSP نشط</string>
     <string name="tracking_started">بدأ التتبع بالرمز: %s</string>
+    <string name="tracking_notification">تتبع الموقع جارٍ</string>
     <string name="permissions_required">أذونات الموقع مطلوبة للتتبع</string>
     <string name="permissions_granted">تم منح الأذونات. اضغط اتصال للبدء.</string>
     <string name="bg_note">يعمل في الخلفية ويرسل الموقع كل ثانية</string>
-    <string name="enter_code">أدخل الرمز</string>
-    <string name="code_empty">الرجاء إدخال الرمز</string>
-    <string name="api_empty">الرجاء إدخال رابط الخادم</string>
     <string name="made_by">صنع بواسطة OMR</string>
+    <string name="stop_tracking">إيقاف التتبع</string>
+    <string name="active_status">نشط</string>
 </resources>

