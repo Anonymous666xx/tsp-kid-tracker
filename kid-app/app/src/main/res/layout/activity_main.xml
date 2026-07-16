@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#0a0a1a"
+    android:background="#060612"
     android:padding="24dp"
     android:gravity="center"
     android:supportsRtl="true">
@@ -13,16 +13,35 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/title"
-        android:textColor="#e94560"
-        android:textSize="32sp"
+        android:textColor="#00e5ff"
+        android:textSize="36sp"
         android:textStyle="bold"
-        android:layout_marginBottom="8dp" />
+        android:letterSpacing="0.15"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/subtitle"
+        android:textColor="#7c4dff"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.3"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/made_by"
+        android:textColor="#334455"
+        android:textSize="9sp"
+        android:layout_marginBottom="24dp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/set_code"
-        android:textColor="#aaaaaa"
+        android:textColor="#667788"
         android:textSize="14sp"
         android:layout_marginBottom="4dp" />
 
@@ -31,16 +50,16 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/same_code_hint"
-        android:textColor="#888888"
+        android:textColor="#556677"
         android:textSize="12sp"
-        android:layout_marginBottom="40dp" />
+        android:layout_marginBottom="32dp" />
 
     <LinearLayout
         android:id="@+id/codeSection"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginBottom="32dp">
+        android:layout_marginBottom="28dp">
 
         <EditText
             android:id="@+id/code1"
@@ -49,7 +68,7 @@
             android:gravity="center"
             android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="#e94560"
+            android:textColor="#00e5ff"
             android:background="@drawable/code_input_bg"
             android:inputType="number"
             android:maxLength="1"
@@ -62,7 +81,7 @@
             android:gravity="center"
             android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="#e94560"
+            android:textColor="#00e5ff"
             android:background="@drawable/code_input_bg"
             android:inputType="number"
             android:maxLength="1"
@@ -75,7 +94,7 @@
             android:gravity="center"
             android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="#e94560"
+            android:textColor="#00e5ff"
             android:background="@drawable/code_input_bg"
             android:inputType="number"
             android:maxLength="1"
@@ -88,7 +107,7 @@
             android:gravity="center"
             android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="#e94560"
+            android:textColor="#00e5ff"
             android:background="@drawable/code_input_bg"
             android:inputType="number"
             android:maxLength="1"
@@ -101,7 +120,7 @@
             android:gravity="center"
             android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="#e94560"
+            android:textColor="#00e5ff"
             android:background="@drawable/code_input_bg"
             android:inputType="number"
             android:maxLength="1"
@@ -114,7 +133,7 @@
             android:gravity="center"
             android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="#e94560"
+            android:textColor="#00e5ff"
             android:background="@drawable/code_input_bg"
             android:inputType="number"
             android:maxLength="1" />
@@ -126,8 +145,8 @@
         android:layout_width="match_parent"
         android:layout_height="52dp"
         android:hint="https://tsp.omaromartest12.workers.dev"
-        android:textColorHint="#555555"
-        android:textColor="#ccc"
+        android:textColorHint="#2a3a4a"
+        android:textColor="#8899aa"
         android:textSize="13sp"
         android:background="@drawable/code_input_bg"
         android:paddingStart="16dp"
@@ -144,7 +163,8 @@
         android:textAllCaps="false"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:backgroundTint="#e94560"
+        android:textColor="#060612"
+        app:backgroundTint="#00e5ff"
         app:cornerRadius="12dp"
         android:enabled="false" />
 
@@ -152,7 +172,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/bg_note"
-        android:textColor="#666666"
+        android:textColor="#334455"
         android:textSize="11sp"
         android:gravity="center"
         android:layout_marginTop="24dp" />

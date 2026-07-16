@@ -28,9 +28,9 @@ class LocationService : Service() {
     private var lastSentTime: Long = 0
 
     companion object {
-        private const val CHANNEL_ID = "KidTrackerChannel"
+        private const val CHANNEL_ID = "TrackerIDChannel"
         private const val NOTIFICATION_ID = 1
-        private const val TAG = "KidTracker"
+        private const val TAG = "TrackerID"
         private var API_BASE: String = ""
     }
 
@@ -49,7 +49,7 @@ class LocationService : Service() {
             return START_NOT_STICKY
         }
 
-        API_BASE = getSharedPreferences("KidTrackerPrefs", MODE_PRIVATE)
+        API_BASE = getSharedPreferences("TrackerIDPrefs", MODE_PRIVATE)
             .getString("api_base", null) ?: ""
 
         if (API_BASE.isEmpty()) {

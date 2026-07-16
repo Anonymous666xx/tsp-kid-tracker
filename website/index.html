@@ -3,46 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TSP</title>
+<title>TSP - Tracker System Pro</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
+@keyframes neonPulse { 0%,100% { text-shadow: 0 0 4px #00e5ff, 0 0 11px #00e5ff, 0 0 19px #00e5ff; } 50% { text-shadow: 0 0 4px #00e5ff, 0 0 20px #00e5ff, 0 0 40px #00e5ff; } }
+@keyframes neonBorder { 0%,100% { box-shadow: 0 0 5px rgba(0,229,255,0.3), inset 0 0 5px rgba(0,229,255,0.1); } 50% { box-shadow: 0 0 15px rgba(0,229,255,0.5), inset 0 0 10px rgba(0,229,255,0.2); } }
+@keyframes neonGlow { 0%,100% { box-shadow: 0 0 5px #00e5ff, 0 0 10px rgba(0,229,255,0.3); } 50% { box-shadow: 0 0 10px #00e5ff, 0 0 25px rgba(0,229,255,0.5); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes bgGlow { 0%,100% { opacity: 0.03; } 50% { opacity: 0.07; } }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Arabic', 'Noto Kufi Arabic', sans-serif; background: #0a0a1a; color: #fff; height: 100vh; display: flex; flex-direction: column; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Arabic', 'Noto Kufi Arabic', sans-serif; background: #060612; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+body::before { content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse at 30% 20%, rgba(0,229,255,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(124,77,255,0.04) 0%, transparent 50%); animation: bgGlow 8s ease-in-out infinite; pointer-events: none; z-index: 0; }
 html[dir="rtl"] body { font-family: 'Noto Sans Arabic', 'Noto Kufi Arabic', -apple-system, BlinkMacSystemFont, sans-serif; }
-.header { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 12px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 2px solid #0f3460; flex-shrink: 0; position: relative; }
-.header h1 { font-size: 18px; color: #e94560; }
-.header .status { font-size: 12px; color: #aaa; margin-left: auto; margin-right: 60px; }
-.header .status.online { color: #4ade80; }
-.lang-btn { background: rgba(15,52,96,0.8); border: 1px solid #0f3460; color: #e94560; padding: 6px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; position: absolute; right: 20px; flex-shrink: 0; }
-.login-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; }
-.login-box { background: #1a1a2e; padding: 40px; border-radius: 16px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.4); border: 1px solid #0f3460; width: 100%; max-width: 420px; }
-.login-box h2 { margin-bottom: 8px; font-size: 24px; }
-.login-box p { color: #aaa; margin-bottom: 24px; font-size: 14px; }
+.header { background: linear-gradient(135deg, #0a0e1a, #0d1b2a); padding: 12px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(0,229,255,0.2); flex-shrink: 0; position: relative; z-index: 1; }
+.header h1 { font-size: 18px; color: #00e5ff; font-weight: 800; letter-spacing: 2px; animation: neonPulse 3s ease-in-out infinite; }
+.header .made-by { font-size: 9px; color: rgba(124,77,255,0.7); position: absolute; top: 4px; letter-spacing: 0.5px; }
+.header .status { font-size: 12px; color: #556; margin-left: auto; margin-right: 60px; transition: color 0.3s; }
+.header .status.online { color: #00ff88; text-shadow: 0 0 6px rgba(0,255,136,0.4); }
+.lang-btn { background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 6px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; position: absolute; right: 20px; flex-shrink: 0; transition: all 0.3s; }
+.lang-btn:hover { background: rgba(0,229,255,0.15); box-shadow: 0 0 12px rgba(0,229,255,0.3); }
+.login-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; position: relative; z-index: 1; }
+.login-box { background: linear-gradient(145deg, #0d1117, #0a0e1a); padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 0 40px rgba(0,229,255,0.05), 0 8px 32px rgba(0,0,0,0.6); border: 1px solid rgba(0,229,255,0.15); width: 100%; max-width: 420px; animation: neonBorder 4s ease-in-out infinite; }
+.login-box h2 { margin-bottom: 6px; font-size: 26px; color: #00e5ff; font-weight: 800; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0,229,255,0.3); }
+.login-box .subtitle { color: rgba(124,77,255,0.7); font-size: 11px; margin-bottom: 8px; letter-spacing: 2px; font-weight: 600; }
+.login-box p { color: #667; margin-bottom: 24px; font-size: 14px; }
 .code-input { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; }
-.code-input input { width: 13%; aspect-ratio: 5/6; max-width: 56px; min-width: 38px; text-align: center; font-size: clamp(20px, 5vw, 28px); font-weight: bold; background: #0f3460; border: 2px solid #1a1a3e; border-radius: 12px; color: #e94560; outline: none; transition: all 0.2s; }
-.code-input input:focus { border-color: #e94560; box-shadow: 0 0 12px rgba(233,69,96,0.3); }
-.connect-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #e94560, #c23152); border: none; border-radius: 12px; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-.connect-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(233,69,96,0.4); }
-.connect-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-.map-container { flex: 1; position: relative; display: none; }
+.code-input input { width: 13%; aspect-ratio: 5/6; max-width: 56px; min-width: 38px; text-align: center; font-size: clamp(20px, 5vw, 28px); font-weight: bold; background: #080c14; border: 1.5px solid rgba(0,229,255,0.2); border-radius: 12px; color: #00e5ff; outline: none; transition: all 0.3s; }
+.code-input input:focus { border-color: #00e5ff; box-shadow: 0 0 15px rgba(0,229,255,0.4), inset 0 0 10px rgba(0,229,255,0.1); animation: neonGlow 2s ease-in-out infinite; }
+.connect-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #00e5ff, #7c4dff); border: none; border-radius: 12px; color: #060612; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; letter-spacing: 1px; text-transform: uppercase; }
+.connect-btn:hover { transform: translateY(-2px); box-shadow: 0 0 20px rgba(0,229,255,0.4), 0 4px 20px rgba(124,77,255,0.3); }
+.connect-btn:active { transform: translateY(0); }
+.connect-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
+.map-container { flex: 1; position: relative; display: none; z-index: 1; }
 #map { width: 100%; height: 100%; }
-.info-panel { position: absolute; bottom: 20px; left: 20px; right: 20px; background: rgba(26,26,46,0.95); backdrop-filter: blur(10px); padding: 14px 18px; border-radius: 14px; border: 1px solid #0f3460; z-index: 1000; display: none; }
+.info-panel { position: absolute; bottom: 20px; left: 20px; right: 20px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(0,229,255,0.15); z-index: 1000; display: none; }
 .info-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px; gap: 8px; }
-.info-row .label { color: #aaa; flex-shrink: 0; }
-.info-row .value { font-weight: 600; text-align: end; word-break: break-all; }
-.info-row .value.stale { color: #f59e0b; }
-.info-row .value.old { color: #ef4444; }
+.info-row .label { color: #556; flex-shrink: 0; }
+.info-row .value { font-weight: 600; text-align: end; word-break: break-all; color: #c0c0c0; }
+.info-row .value.stale { color: #ff9100; text-shadow: 0 0 6px rgba(255,145,0,0.3); }
+.info-row .value.old { color: #ff1744; text-shadow: 0 0 6px rgba(255,23,68,0.3); }
 .top-bar { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 1000; display: none; }
-.top-bar .refresh-btn { background: rgba(26,26,46,0.95); border: 1px solid #0f3460; color: #e94560; padding: 10px 16px; border-radius: 10px; font-size: 14px; cursor: pointer; font-weight: 600; }
-.top-bar .disconnect-btn { position: absolute; right: 10px; background: rgba(26,26,46,0.95); border: 1px solid #0f3460; color: #aaa; padding: 10px 16px; border-radius: 10px; font-size: 14px; cursor: pointer; }
+.top-bar .refresh-btn { background: rgba(6,6,18,0.92); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 10px 16px; border-radius: 10px; font-size: 14px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+.top-bar .refresh-btn:hover { box-shadow: 0 0 12px rgba(0,229,255,0.3); background: rgba(0,229,255,0.08); }
+.top-bar .disconnect-btn { position: absolute; right: 10px; background: rgba(6,6,18,0.92); border: 1px solid rgba(255,23,68,0.3); color: #ff5252; padding: 10px 16px; border-radius: 10px; font-size: 14px; cursor: pointer; transition: all 0.3s; }
+.top-bar .disconnect-btn:hover { box-shadow: 0 0 12px rgba(255,23,68,0.3); background: rgba(255,23,68,0.08); }
 @media (max-width: 600px) {
   .header { padding: 10px 14px; gap: 10px; }
   .header h1 { font-size: 16px; }
+  .header .made-by { font-size: 8px; top: 3px; }
   .header .status { font-size: 11px; margin-right: 50px; }
   .lang-btn { right: 14px; padding: 5px 10px; font-size: 12px; }
   .login-box { padding: 28px 20px; }
-  .login-box h2 { font-size: 20px; }
+  .login-box h2 { font-size: 22px; }
   .login-box p { font-size: 13px; }
   .code-input { gap: 6px; }
   .connect-btn { padding: 16px; font-size: 17px; }
@@ -65,14 +78,16 @@ html[dir="rtl"] body { font-family: 'Noto Sans Arabic', 'Noto Kufi Arabic', -app
 </head>
 <body>
 <div class="header">
+  <span class="made-by">MADE BY OMR</span>
   <h1>TSP</h1>
   <div class="status" id="status" data-en="Not connected" data-ar="غير متصل">Not connected</div>
   <button class="lang-btn" id="langBtn" onclick="toggleLang()">عربي</button>
 </div>
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
-    <h2 data-en="Track Your Kid" data-ar="تتبع طفلك">Track Your Kid</h2>
-    <p data-en="Enter the 6-digit code from the kid's app" data-ar="أدخل الرمز المكون من 6 أرقام من تطبيق الطفل">Enter the 6-digit code from the kid's app</p>
+    <h2 data-en="Tracker ID" data-ar="معرّف التتبع">Tracker ID</h2>
+    <div class="subtitle">TRACKER SYSTEM PRO</div>
+    <p data-en="Enter the 6-digit Tracker ID code" data-ar="أدخل رمز معرّف التتبع المكون من 6 أرقام">Enter the 6-digit Tracker ID code</p>
     <div class="code-input" id="codeInput">
       <input type="text" maxlength="1" inputmode="numeric" autofocus>
       <input type="text" maxlength="1" inputmode="numeric">
@@ -189,7 +204,7 @@ function initMap() {
     attribution: '&copy; OSM &copy; CartoDB',
     maxZoom: 19
   }).addTo(map);
-  trail = L.polyline([], { color: '#e94560', weight: 3, opacity: 0.7 }).addTo(map);
+  trail = L.polyline([], { color: '#00e5ff', weight: 3, opacity: 0.8 }).addTo(map);
 }
 
 async function fetchLocation() {
@@ -214,7 +229,14 @@ function updateMap(data) {
   if (marker) {
     marker.setLatLng(pos);
   } else {
-    marker = L.circleMarker(pos, { radius: 10, fillColor: '#e94560', color: '#fff', weight: 2, fillOpacity: 0.9 }).addTo(map);
+    marker = L.circleMarker(pos, {
+      radius: 10,
+      fillColor: '#00e5ff',
+      color: '#fff',
+      weight: 2,
+      fillOpacity: 0.9,
+      className: 'neon-marker'
+    }).addTo(map);
   }
 
   trail.addLatLng(pos);

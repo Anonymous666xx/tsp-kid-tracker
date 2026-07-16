@@ -1,10 +1,11 @@
 <resources>
-    <style name="Theme.KidTracker" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">#e94560</item>
-        <item name="colorPrimaryVariant">#c23152</item>
-        <item name="colorOnPrimary">#FFFFFF</item>
-        <item name="android:statusBarColor">#0a0a1a</item>
-        <item name="android:navigationBarColor">#0a0a1a</item>
-        <item name="android:windowBackground">#0a0a1a</item>
+    <style name="Theme.TrackerID" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#00e5ff</item>
+        <item name="colorPrimaryVariant">#7c4dff</item>
+        <item name="colorOnPrimary">#060612</item>
+        <item name="colorSecondary">#7c4dff</item>
+        <item name="android:statusBarColor">#060612</item>
+        <item name="android:navigationBarColor">#060612</item>
+        <item name="android:windowBackground">#060612</item>
     </style>
 </resources>

@@ -10,7 +10,7 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
 
-        val prefs = context.getSharedPreferences("KidTrackerPrefs", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences("TrackerIDPrefs", Context.MODE_PRIVATE)
         val code = prefs.getString("tracking_code", null)
         val apiBase = prefs.getString("api_base", null)
 

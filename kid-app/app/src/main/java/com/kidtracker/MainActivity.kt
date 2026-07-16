@@ -13,7 +13,7 @@ import com.kidtracker.databinding.ActivityMainBinding
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private val PREFS_NAME = "KidTrackerPrefs"
+    private val PREFS_NAME = "TrackerIDPrefs"
     private val PERMISSION_REQUEST = 1001
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -109,7 +109,7 @@ class MainActivity : AppCompatActivity() {
         }
         ContextCompat.startForegroundService(this, intent)
         binding.statusText.text = getString(R.string.tracking_active)
-        binding.statusText.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_light))
+        binding.statusText.setTextColor(android.graphics.Color.parseColor("#00ff88"))
         binding.codeSection.alpha = 0.5f
         Toast.makeText(this, getString(R.string.tracking_started, code), Toast.LENGTH_LONG).show()
     }
