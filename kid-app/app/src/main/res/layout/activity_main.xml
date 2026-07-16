@@ -6,12 +6,13 @@
     android:orientation="vertical"
     android:background="#0a0a1a"
     android:padding="24dp"
-    android:gravity="center">
+    android:gravity="center"
+    android:supportsRtl="true">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="TSP"
+        android:text="@string/title"
         android:textColor="#e94560"
         android:textSize="32sp"
         android:textStyle="bold"
@@ -20,7 +21,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Set your 6-digit code"
+        android:text="@string/set_code"
         android:textColor="#aaaaaa"
         android:textSize="14sp"
         android:layout_marginBottom="4dp" />
@@ -29,7 +30,7 @@
         android:id="@+id/statusText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enter the same code on the parent website"
+        android:text="@string/same_code_hint"
         android:textColor="#888888"
         android:textSize="12sp"
         android:layout_marginBottom="40dp" />
@@ -139,7 +140,7 @@
         android:id="@+id/connectButton"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:text="Start Tracking"
+        android:text="@string/start_tracking"
         android:textAllCaps="false"
         android:textSize="16sp"
         android:textStyle="bold"
@@ -150,7 +151,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="The app runs in background and sends\nlocation every 1 second"
+        android:text="@string/bg_note"
         android:textColor="#666666"
         android:textSize="11sp"
         android:gravity="center"

@@ -16,6 +16,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.Executors
 import android.util.Log
+import com.kidtracker.R
 
 class LocationService : Service() {
 
@@ -71,10 +72,10 @@ class LocationService : Service() {
         if (Build.VERSION.SDK_INT >= 26) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Kid Location Tracking",
+                getString(R.string.tracking_active),
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Tracking your kid's location"
+                description = getString(R.string.bg_note)
                 setShowBadge(false)
             }
             val manager = getSystemService(NotificationManager::class.java)
@@ -84,8 +85,8 @@ class LocationService : Service() {
 
     private fun createNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Kid Tracker Active")
-            .setContentText("Tracking location...")
+            .setContentTitle(getString(R.string.tracking_active))
+            .setContentText(getString(R.string.bg_note))
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)

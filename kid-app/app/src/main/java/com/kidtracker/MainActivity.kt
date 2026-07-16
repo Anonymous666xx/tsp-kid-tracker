@@ -108,10 +108,10 @@ class MainActivity : AppCompatActivity() {
             putExtra("tracking_code", code)
         }
         ContextCompat.startForegroundService(this, intent)
-        binding.statusText.text = "Tracking Active"
+        binding.statusText.text = getString(R.string.tracking_active)
         binding.statusText.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_light))
         binding.codeSection.alpha = 0.5f
-        Toast.makeText(this, "Tracking started with code: $code", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, getString(R.string.tracking_started, code), Toast.LENGTH_LONG).show()
     }
 
     private fun checkPermissions() {
@@ -134,7 +134,7 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST) {
             if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                Toast.makeText(this, "Permissions granted. Tap Connect to start.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.permissions_granted), Toast.LENGTH_SHORT).show()
                 if (android.os.Build.VERSION.SDK_INT >= 29) {
                     if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
                         != PackageManager.PERMISSION_GRANTED) {
@@ -143,7 +143,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             } else {
-                Toast.makeText(this, "Location permissions required for tracking", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.permissions_required), Toast.LENGTH_LONG).show()
             }
         }
     }

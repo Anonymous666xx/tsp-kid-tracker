@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">TSP</string>
+    <string name="title">TSP</string>
+    <string name="set_code">Set your 6-digit code</string>
+    <string name="same_code_hint">Enter the same code on the website</string>
+    <string name="api_url_hint">Worker URL (e.g. https://tsp.XXX.workers.dev)</string>
+    <string name="start_tracking">Start Tracking</string>
+    <string name="tracking_active">Tracking Active</string>
+    <string name="tracking_started">Tracking started with code: %s</string>
+    <string name="permissions_required">Location permissions required for tracking</string>
+    <string name="permissions_granted">Permissions granted. Tap Connect to start.</string>
+    <string name="bg_note">The app runs in background and sends location every 1 second</string>
+    <string name="enter_code">Enter the code</string>
+    <string name="code_empty">Please enter the code</string>
+    <string name="api_empty">Please enter the server URL</string>
 </resources>
