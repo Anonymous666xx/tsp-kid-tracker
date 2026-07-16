@@ -195,6 +195,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .login-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 1; }
 .login-box { background: linear-gradient(145deg, #0d1117, #0a0e1a); padding: 28px 20px; border-radius: 18px; text-align: center; box-shadow: 0 0 40px rgba(0,229,255,0.05); border: 1px solid rgba(0,229,255,0.15); width: 100%; max-width: 380px; animation: neonBorder 4s ease-in-out infinite; }
 .login-box .brand { margin-bottom: 16px; }
+.login-box .brand-logo { width: 72px; height: 72px; border-radius: 18px; margin: 0 auto 10px; object-fit: cover; border: 2px solid rgba(0,229,255,0.3); box-shadow: 0 0 30px rgba(0,229,255,0.15); }
 .login-box h2 { font-size: 22px; color: #00e5ff; font-weight: 800; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0,229,255,0.3); margin-bottom: 4px; }
 .login-box .subtitle { color: rgba(124,77,255,0.7); font-size: 10px; letter-spacing: 2px; font-weight: 600; margin-bottom: 4px; }
 .login-box .made-by { color: #334455; font-size: 9px; letter-spacing: 1px; }

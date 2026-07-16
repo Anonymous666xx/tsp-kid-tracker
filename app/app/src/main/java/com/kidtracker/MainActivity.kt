@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity() {
         val savedCode = prefs.getString("tracking_code", null)
 
         if (savedCode != null && savedCode.length == 6) {
-            startTracking(savedCode)
+            checkAllPermissionsThenStart(savedCode)
             return
         }
 
