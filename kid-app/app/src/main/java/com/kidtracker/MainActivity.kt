@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
@@ -22,6 +23,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Locale
 import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
@@ -33,6 +35,17 @@ class MainActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private val executor = Executors.newSingleThreadExecutor()
     private var pollingPair = false
+    private var dialogShowing = false
+    private val processedIds = mutableSetOf<String>()
+
+    override fun attachBaseContext(newBase: android.content.Context) {
+        val prefs = newBase.getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val lang = prefs.getString("app_lang", "en") ?: "en"
+        val locale = Locale(lang)
+        val config = Configuration(newBase.resources.configuration)
+        config.setLocale(locale)
+        super.attachBaseContext(newBase.createConfigurationContext(config))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,11 +53,22 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        val savedCode = prefs.getString("tracking_code", null)
+        val currentLang = prefs.getString("app_lang", "en") ?: "en"
+        binding.langToggle.text = if (currentLang == "en") "عربي" else "EN"
+        binding.langToggle.setOnClickListener {
+            val newLang = if (currentLang == "en") "ar" else "en"
+            prefs.edit().putString("app_lang", newLang).apply()
+            recreate()
+        }
 
-        if (savedCode != null && savedCode.length == 6) {
-            startTracking(savedCode)
-            return
+        binding.stopButton.setOnClickListener {
+            pollingPair = false
+            dialogShowing = false
+            handler.removeCallbacksAndMessages(null)
+            executor.shutdownNow()
+            prefs.edit().remove("tracking_code").apply()
+            stopService(Intent(this, LocationService::class.java))
+            showSetupUI()
         }
 
         setupCodeInputs()
@@ -57,13 +81,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        binding.stopButton.setOnClickListener {
-            pollingPair = false
-            handler.removeCallbacksAndMessages(null)
-            executor.shutdownNow()
-            prefs.edit().remove("tracking_code").apply()
-            stopService(Intent(this, LocationService::class.java))
-            showSetupUI()
+        val savedCode = prefs.getString("tracking_code", null)
+
+        if (savedCode != null && savedCode.length == 6) {
+            startTracking(savedCode)
+            return
         }
 
         checkPermissions()
@@ -143,7 +165,10 @@ class MainActivity : AppCompatActivity() {
                     val request = arr.getJSONObject(0)
                     val id = request.getString("id")
                     val deviceInfo = request.optString("device_info", "Unknown device")
-                    handler.post { showPairDialog(id, deviceInfo, code) }
+                    if (!processedIds.contains(id) && !dialogShowing) {
+                        processedIds.add(id)
+                        handler.post { showPairDialog(id, deviceInfo, code) }
+                    }
                 }
                 conn.disconnect()
             } catch (e: Exception) {
@@ -153,6 +178,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showPairDialog(id: String, deviceInfo: String, code: String) {
+        dialogShowing = true
         val dialog = AlertDialog.Builder(this).create()
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.window?.setGravity(Gravity.CENTER)
@@ -185,6 +211,7 @@ class MainActivity : AppCompatActivity() {
             setBackgroundColor(Color.parseColor("#00e5ff"))
             setOnClickListener {
                 dialog.dismiss()
+                dialogShowing = false
                 respondToPair(id, "accepted", code)
             }
         }
@@ -195,6 +222,7 @@ class MainActivity : AppCompatActivity() {
             setBackgroundColor(Color.TRANSPARENT)
             setOnClickListener {
                 dialog.dismiss()
+                dialogShowing = false
                 respondToPair(id, "declined", code)
             }
         }
@@ -205,11 +233,12 @@ class MainActivity : AppCompatActivity() {
         layout.addView(declineBtn)
         dialog.setView(layout)
         dialog.setCancelable(false)
+        dialog.setOnDismissListener { dialogShowing = false }
         dialog.show()
     }
 
     private fun respondToPair(id: String, action: String, code: String) {
-        executor.execute {
+        Thread {
             try {
                 val url = URL("$API_BASE/api/pair-$action")
                 val conn = url.openConnection() as HttpURLConnection
@@ -222,7 +251,7 @@ class MainActivity : AppCompatActivity() {
                 conn.responseCode
                 conn.disconnect()
             } catch (e: Exception) {}
-        }
+        }.start()
     }
 
     private fun checkPermissions() {
