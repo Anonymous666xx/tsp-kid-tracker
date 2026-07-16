@@ -15,6 +15,7 @@ import android.provider.CallLog
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import android.content.pm.PackageManager
+import android.Manifest
 import com.google.android.gms.location.*
 import org.json.JSONArray
 import org.json.JSONObject
