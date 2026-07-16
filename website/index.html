@@ -58,6 +58,27 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 .disconnected-overlay .title { color: #ff1744; font-size: 20px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
 .disconnected-overlay .sub { color: #667; font-size: 13px; }
 .disconnected-overlay .retry-text { color: #556; font-size: 11px; animation: pulse 2s ease-in-out infinite; }
+.device-tabs { display: none; position: absolute; top: 50px; left: 8px; right: 8px; z-index: 10000; display: flex; gap: 6px; overflow-x: auto; padding: 4px 0; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.device-tabs::-webkit-scrollbar { display: none; }
+.device-tabs.visible { display: flex; }
+.device-tab { flex-shrink: 0; padding: 7px 14px; background: rgba(6,6,18,0.88); backdrop-filter: blur(12px); border: 1px solid rgba(0,229,255,0.15); border-radius: 20px; color: #889; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+.device-tab:active { background: rgba(0,229,255,0.1); }
+.device-tab.active { background: rgba(0,229,255,0.12); border-color: rgba(0,229,255,0.5); color: #00e5ff; box-shadow: 0 0 12px rgba(0,229,255,0.2); }
+.device-tab .dot { width: 6px; height: 6px; border-radius: 50%; background: #445; flex-shrink: 0; }
+.device-tab.active .dot { background: #00e5ff; box-shadow: 0 0 6px rgba(0,229,255,0.6); }
+.device-tab .online-dot { background: #00ff88; box-shadow: 0 0 6px rgba(0,255,136,0.6); }
+.screenshot-btn { background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); border: 1px solid rgba(124,77,255,0.3); color: #7c4dff; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600; position: absolute; right: 80px; z-index: 10000; display: none; }
+.screenshot-btn:active { background: rgba(124,77,255,0.15); }
+.screenshot-btn.loading { opacity: 0.5; pointer-events: none; }
+.screenshot-overlay { display: none; position: fixed; inset: 0; z-index: 50000; background: rgba(6,6,18,0.95); backdrop-filter: blur(20px); flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+.screenshot-overlay.open { display: flex; }
+.screenshot-overlay .ss-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; position: absolute; top: 0; left: 0; right: 0; }
+.screenshot-overlay .ss-close { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #fff; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; }
+.screenshot-overlay .ss-title { color: #e0e0e0; font-size: 16px; font-weight: 700; }
+.screenshot-overlay .ss-time { color: #556; font-size: 11px; margin-left: auto; }
+.screenshot-overlay img { max-width: 95vw; max-height: 80vh; border-radius: 12px; border: 1px solid rgba(0,229,255,0.2); box-shadow: 0 0 40px rgba(0,229,255,0.1); }
+.screenshot-overlay .ss-waiting { color: #00e5ff; font-size: 14px; font-weight: 600; animation: pulse 2s ease-in-out infinite; }
+.screenshot-overlay .ss-spinner { width: 40px; height: 40px; border: 3px solid rgba(0,229,255,0.1); border-top-color: #00e5ff; border-radius: 50%; animation: spin 1s linear infinite; }
 .info-panel { position: absolute; bottom: 56px; left: 16px; right: 16px; background: rgba(6,6,18,0.92); backdrop-filter: blur(12px); padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(0,229,255,0.15); z-index: 10000; display: none; max-height: 35vh; overflow-y: auto; }
 .info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; gap: 6px; }
 .info-row .label { color: #556; flex-shrink: 0; }
@@ -176,8 +197,10 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 <div class="map-container" id="mapContainer">
   <div class="top-bar" id="topBar">
     <button class="refresh-btn" id="refreshBtn">Refresh</button>
+    <button class="screenshot-btn" id="screenshotBtn">Screenshot</button>
     <button class="disconnect-btn" id="disconnectBtn">Logout</button>
   </div>
+  <div class="device-tabs" id="deviceTabs"></div>
   <div id="map"></div>
   <div class="disconnected-overlay" id="disconnectedOverlay">
     <div class="icon">
@@ -214,6 +237,16 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
     </div>
     <div class="call-sheet-list" id="callSheetList"></div>
   </div>
+</div>
+<div class="screenshot-overlay" id="screenshotOverlay">
+  <div class="ss-header">
+    <div class="ss-close" id="ssClose">&times;</div>
+    <div class="ss-title">Screenshot</div>
+    <div class="ss-time" id="ssTime"></div>
+  </div>
+  <div class="ss-spinner" id="ssSpinner"></div>
+  <div class="ss-waiting" id="ssWaiting">Capturing screenshot...</div>
+  <img id="ssImage" style="display:none" />
 </div>
 <div class="dl-overlay" id="dlOverlay">
   <div class="dl-topbar">
@@ -291,6 +324,7 @@ body::before { content: ''; position: fixed; inset: 0; background: radial-gradie
 let deviceId = localStorage.getItem('tsp-device-id');
 if (!deviceId) { deviceId = crypto.randomUUID(); localStorage.setItem('tsp-device-id', deviceId); }
 let map, marker, trail, currentCode, refreshInterval, pairPollInterval, lastDataTime = 0, isDisconnected = false;
+let devices = [], activeDeviceId = null, devicePollInterval = null, screenshotPollInterval = null;
 const inputs = document.querySelectorAll('.code-input input');
 const connectBtn = document.getElementById('connectBtn');
 const loginScreen = document.getElementById('loginScreen');
@@ -299,6 +333,9 @@ const topBar = document.getElementById('topBar');
 const infoPanel = document.getElementById('infoPanel');
 const pairingWait = document.getElementById('pairingWait');
 const disconnectedOverlay = document.getElementById('disconnectedOverlay');
+const deviceTabsEl = document.getElementById('deviceTabs');
+const screenshotBtn = document.getElementById('screenshotBtn');
+const screenshotOverlay = document.getElementById('screenshotOverlay');
 const API_BASE = "https://tsp.omaromartest12.workers.dev";
 
 inputs.forEach((input, i) => {
@@ -388,12 +425,15 @@ function startTracking() {
   loginScreen.style.display = 'none';
   mapContainer.style.display = 'flex';
   topBar.style.display = 'block';
+  screenshotBtn.style.display = 'block';
   initMap();
   lastDataTime = Date.now();
   isDisconnected = false;
   disconnectedOverlay.classList.remove('visible');
   fetchLocation();
+  fetchDevices();
   refreshInterval = setInterval(fetchLocation, 1000);
+  devicePollInterval = setInterval(fetchDevices, 5000);
   setInterval(checkDisconnected, 2000);
   document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live';
   document.getElementById('status').className = 'status online';
@@ -413,12 +453,22 @@ function checkDisconnected() {
 document.getElementById('disconnectBtn').addEventListener('click', () => {
   clearInterval(refreshInterval);
   clearInterval(pairPollInterval);
+  clearInterval(devicePollInterval);
+  clearInterval(screenshotPollInterval);
   localStorage.removeItem('tsp-paired-' + currentCode);
   localStorage.removeItem('tsp-current-code');
   currentCode = null;
   lastDataTime = 0;
   isDisconnected = false;
+  devices = [];
+  activeDeviceId = null;
   disconnectedOverlay.classList.remove('visible');
+  screenshotOverlay.classList.remove('open');
+  screenshotBtn.classList.remove('loading');
+  screenshotBtn.textContent = 'Screenshot';
+  screenshotBtn.style.display = 'none';
+  deviceTabsEl.innerHTML = '';
+  deviceTabsEl.classList.remove('visible');
   loginScreen.style.display = 'flex';
   mapContainer.style.display = 'none';
   topBar.style.display = 'none';
@@ -450,7 +500,9 @@ function initMap() {
 async function fetchLocation() {
   if (!currentCode) return;
   try {
-    const res = await fetch(API_BASE + '/api/get-location?code=' + currentCode);
+    let url = API_BASE + '/api/get-location?code=' + currentCode;
+    if (activeDeviceId) url += '&device_id=' + activeDeviceId;
+    const res = await fetch(url);
     if (!res.ok) return;
     const data = await res.json();
     if (!data.latitude) return;
@@ -463,9 +515,107 @@ async function fetchLocation() {
     }
     updateMap(data);
     updateCalls(data.calls || []);
-    document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live';
+    const devName = data.device_name || 'Unknown';
+    document.getElementById('status').textContent = devName + ' | ' + currentCode + ' | Live';
   } catch (e) {}
 }
+
+async function fetchDevices() {
+  if (!currentCode) return;
+  try {
+    const res = await fetch(API_BASE + '/api/get-devices?code=' + currentCode);
+    if (!res.ok) return;
+    const list = await res.json();
+    if (!list || list.length === 0) return;
+    devices = list;
+    if (!activeDeviceId && devices.length > 0) {
+      activeDeviceId = devices[0].device_id;
+    }
+    renderDeviceTabs();
+  } catch (e) {}
+}
+
+function renderDeviceTabs() {
+  deviceTabsEl.innerHTML = '';
+  if (devices.length <= 1) { deviceTabsEl.classList.remove('visible'); return; }
+  deviceTabsEl.classList.add('visible');
+  devices.forEach(dev => {
+    const tab = document.createElement('div');
+    tab.className = 'device-tab' + (dev.device_id === activeDeviceId ? ' active' : '');
+    const isRecent = (Date.now() - new Date(dev.last_seen).getTime()) < 30000;
+    tab.innerHTML = '<span class="dot' + (isRecent ? ' online-dot' : '') + '"></span>' + escapeHtml(dev.device_name || 'Device');
+    tab.addEventListener('click', () => {
+      activeDeviceId = dev.device_id;
+      trail.clearLayers();
+      marker = null;
+      renderDeviceTabs();
+      fetchLocation();
+    });
+    deviceTabsEl.appendChild(tab);
+  });
+}
+
+screenshotBtn.addEventListener('click', async () => {
+  if (!currentCode) return;
+  screenshotBtn.classList.add('loading');
+  screenshotBtn.textContent = 'Capturing...';
+  screenshotOverlay.classList.add('open');
+  document.getElementById('ssSpinner').style.display = 'block';
+  document.getElementById('ssWaiting').style.display = 'block';
+  document.getElementById('ssImage').style.display = 'none';
+  try {
+    const res = await fetch(API_BASE + '/api/request-screenshot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: currentCode, device_id: activeDeviceId || 'default' })
+    });
+    const data = await res.json();
+    if (data.ok) pollScreenshotResult(data.id);
+    else { screenshotBtn.classList.remove('loading'); screenshotBtn.textContent = 'Screenshot'; screenshotOverlay.classList.remove('open'); }
+  } catch (e) {
+    screenshotBtn.classList.remove('loading');
+    screenshotBtn.textContent = 'Screenshot';
+    screenshotOverlay.classList.remove('open');
+  }
+});
+
+function pollScreenshotResult(requestId) {
+  clearInterval(screenshotPollInterval);
+  let attempts = 0;
+  screenshotPollInterval = setInterval(async () => {
+    attempts++;
+    if (attempts > 30) {
+      clearInterval(screenshotPollInterval);
+      document.getElementById('ssWaiting').textContent = 'Timed out - device may not support screenshots';
+      document.getElementById('ssSpinner').style.display = 'none';
+      screenshotBtn.classList.remove('loading');
+      screenshotBtn.textContent = 'Screenshot';
+      return;
+    }
+    try {
+      const res = await fetch(API_BASE + '/api/check-screenshot?id=' + requestId);
+      const data = await res.json();
+      if (data.status === 'done' && data.screenshot_url) {
+        clearInterval(screenshotPollInterval);
+        document.getElementById('ssSpinner').style.display = 'none';
+        document.getElementById('ssWaiting').style.display = 'none';
+        const img = document.getElementById('ssImage');
+        img.src = data.screenshot_url;
+        img.style.display = 'block';
+        document.getElementById('ssTime').textContent = new Date().toLocaleTimeString();
+        screenshotBtn.classList.remove('loading');
+        screenshotBtn.textContent = 'Screenshot';
+      }
+    } catch (e) {}
+  }, 2000);
+}
+
+document.getElementById('ssClose').addEventListener('click', () => {
+  clearInterval(screenshotPollInterval);
+  screenshotOverlay.classList.remove('open');
+  screenshotBtn.classList.remove('loading');
+  screenshotBtn.textContent = 'Screenshot';
+});
 
 function updateMap(data) {
   const lat = data.latitude, lng = data.longitude, pos = [lat, lng];

